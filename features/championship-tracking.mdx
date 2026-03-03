@@ -55,6 +55,8 @@ The tab bar has a custom rounded indicator that animates smoothly between tabs.
 The `DriversScreen` component displays the championship standings for all drivers:
 
 ```tsx components/screens/drivers-screen.tsx
+import { DEFAULT_YEAR } from "@/constants/vaules";
+
 export default function DriversScreen() {
   const { data: standings, isLoading, isError } = useDriverStandings(DEFAULT_YEAR);
 
@@ -113,6 +115,8 @@ type DriverStanding = {
 The `ConstructorsScreen` displays team championships:
 
 ```tsx components/screens/constructors-screen.tsx
+import { DEFAULT_YEAR } from "@/constants/vaules";
+
 export default function ConstructorsScreen() {
   const { data: standings, isLoading, isError } = useConstructorStandings(DEFAULT_YEAR);
 
