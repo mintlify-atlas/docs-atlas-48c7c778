@@ -1,0 +1,101 @@
+{
+  "projectType": "frontend",
+  "projectName": "Season Journal",
+  "projectDescription": "A beautiful, functional, and deeply personalized Formula 1 companion app built with React Native and Expo.",
+  "theme": "palm",
+  "primaryColor": "#FABC05",
+  "lightColor": "#FFF3DC",
+  "darkColor": "#1C1C2E",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/race-predictions-bingo",
+              "features/canvas-editor",
+              "features/championship-tracking",
+              "features/favorites"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "components/overview",
+              "components/bingo-components",
+              "components/ui-components"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/project-structure",
+              "development/theming",
+              "development/state-management",
+              "development/navigation"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Data Models",
+            "pages": [
+              "api/types",
+              "api/driver",
+              "api/constructor"
+            ]
+          },
+          {
+            "group": "Services",
+            "pages": [
+              "api/jolpica-api"
+            ]
+          },
+          {
+            "group": "Hooks",
+            "pages": [
+              "api/hooks/use-bingo-state",
+              "api/hooks/use-canvas-editor",
+              "api/hooks/use-favorites",
+              "api/hooks/use-standings"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Interactive race predictions bingo with customizable cards",
+    "Rich canvas editor with drawing, text, and image support",
+    "Real-time F1 championship tracking for drivers and constructors",
+    "Personalized favorites system for drivers and teams",
+    "File-based routing with Expo Router",
+    "Custom theming with NativeWind and Tailwind CSS"
+  ],
+  "publicApiSurface": [
+    "useBingoState - Bingo card state management hook",
+    "useCanvasEditor - Canvas editing functionality hook",
+    "useDriverStandings - Fetch driver championship standings",
+    "useConstructorStandings - Fetch constructor championship standings",
+    "useFavoriteDriver - Fetch favorite driver data",
+    "useFavoriteTeam - Fetch favorite team data",
+    "jolpicaApi - F1 data API service",
+    "BingoGrid - Interactive bingo grid component",
+    "CanvasEditorModal - Full-featured canvas editor modal",
+    "DriversScreen - Driver standings screen",
+    "ConstructorsScreen - Constructor standings screen"
+  ]
+}
