@@ -1,0 +1,244 @@
+---
+title: Favorites
+description: Save and view detailed information about favorite drivers and teams
+---
+
+The favorites feature allows users to save their favorite Formula 1 drivers and teams for quick access to detailed statistics and information. Data is fetched on-demand using React Query.
+
+## Favorite driver
+
+The `FavouriteDriverScreen` component displays detailed information about a saved driver:
+
+```tsx components/screens/favourite-driver-screen.tsx
+export default function FavouriteDriverScreen() {
+  const { data: driver, isLoading, isError } = useFavoriteDriver(MOCK_FAVORITE_ID);
+
+  if (isLoading) return <LoadingState />;
+  if (isError || !driver) return <ErrorState />;
+
+  return (
+    <View className="flex-1 px-5 pt-8 bg-glass-bg">
+      <View className="bg-glass-solid rounded-3xl p-8 items-center shadow-lg">
+        <View className="w-20 h-20 rounded-[24px] bg-[#F5ECEC] items-center justify-center mb-6">
+          <Heart color="#D4A0A0" size={36} strokeWidth={1.5} />
+        </View>
+
+        <Text className="font-inter-bold text-3xl text-glass-dark mb-1">
+          {driver.givenName} {driver.familyName}
+        </Text>
+
+        <View className="bg-[#FFF3DC] px-4 py-1.5 rounded-full mb-8">
+          <Text className="font-nunito-bold text-lg text-[#FABC05]">
+            {driver.permanentNumber}
+          </Text>
+        </View>
+
+        <View className="w-full bg-[#F8F8FC] rounded-2xl p-4 mb-3 flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <Flag color="#8E8E93" size={20} strokeWidth={2} />
+            <Text className="font-nunito text-[#8E8E93] ml-3">Nationality</Text>
+          </View>
+          <Text className="font-nunito-bold text-glass-dark">
+            {driver.nationality}
+          </Text>
+        </View>
+
+        <View className="w-full bg-[#F8F8FC] rounded-2xl p-4 flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <Calendar color="#8E8E93" size={20} strokeWidth={2} />
+            <Text className="font-nunito text-[#8E8E93] ml-3">Date of Birth</Text>
+          </View>
+          <Text className="font-nunito-bold text-glass-dark">
+            {driver.dateOfBirth}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+```
+
+### Driver data structure
+
+```typescript
+type Driver = {
+  driverId: string;
+  givenName: string;
+  familyName: string;
+  permanentNumber: string;
+  nationality: string;
+  dateOfBirth: string;
+};
+```
+
+<Info>
+The driver information includes their permanent racing number, which uniquely identifies them throughout their F1 career.
+</Info>
+
+## Favorite team
+
+The `FavouriteTeamScreen` component shows constructor details:
+
+```tsx components/screens/favourite-team-screen.tsx
+export default function FavouriteTeamScreen() {
+  const mockFavoriteId = "red_bull";
+  const { data: team, isLoading, isError } = useFavoriteTeam(mockFavoriteId);
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 justify-center items-center" style={{ backgroundColor: Colors.background }}>
+        <ActivityIndicator size="large" color={Colors.accent} />
+      </View>
+    );
+  }
+
+  if (isError || !team) {
+    return (
+      <View className="flex-1 justify-center items-center px-5" style={{ backgroundColor: Colors.background }}>
+        <Text style={{ fontFamily: Fonts.body, color: Colors.textSecondary }}>
+          Could not load favorite team details.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-1 px-5 pt-8" style={{ backgroundColor: Colors.background }}>
+      <View style={{ backgroundColor: Colors.surfaceSolid, borderRadius: 24, padding: 32, alignItems: "center" }}>
+        <View style={{ width: 72, height: 72, borderRadius: 18, backgroundColor: "#F5ECEC", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+          <Heart color={Colors.rose} size={32} strokeWidth={1.25} fill={Colors.rose} />
+        </View>
+
+        <Text style={{ fontFamily: Fonts.displayMedium, fontSize: 24, color: Colors.textPrimary, marginBottom: 8 }}>
+          {team.name}
+        </Text>
+
+        <Text style={{ fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary }}>
+          Nationality: {team.nationality}
+        </Text>
+      </View>
+    </View>
+  );
+}
+```
+
+### Team data structure
+
+```typescript
+type Constructor = {
+  constructorId: string;
+  name: string;
+  nationality: string;
+};
+```
+
+## Data fetching hooks
+
+The app uses React Query hooks to fetch favorite driver and team data:
+
+```typescript hooks/queries/useFavorites.ts
+import { useQuery } from "@tanstack/react-query";
+import { jolpicaApi } from "@/services/jolpica/api";
+
+export function useFavoriteDriver(driverId: string | null) {
+  return useQuery({
+    queryKey: ["favoriteDriver", driverId],
+    queryFn: () => (driverId ? jolpicaApi.getDriver(driverId) : null),
+    enabled: !!driverId,
+  });
+}
+
+export function useFavoriteTeam(constructorId: string | null) {
+  return useQuery({
+    queryKey: ["favoriteTeam", constructorId],
+    queryFn: () => (constructorId ? jolpicaApi.getConstructor(constructorId) : null),
+    enabled: !!constructorId,
+  });
+}
+```
+
+### Query features
+
+<ParamField path="queryKey" type="array">
+  Unique identifier for the query, including the driver/team ID for proper caching
+</ParamField>
+
+<ParamField path="queryFn" type="function">
+  Async function that fetches data from the Jolpica F1 API
+</ParamField>
+
+<ParamField path="enabled" type="boolean">
+  Query only runs when a valid ID is provided
+</ParamField>
+
+<CardGroup cols={2}>
+  <Card title="Conditional fetching" icon="toggle-on">
+    Queries only execute when a favorite is set (enabled flag)
+  </Card>
+  <Card title="Automatic caching" icon="database">
+    React Query caches driver and team data by ID
+  </Card>
+  <Card title="Background refetch" icon="arrows-rotate">
+    Data refreshes when the screen regains focus
+  </Card>
+  <Card title="Null safety" icon="shield-check">
+    Gracefully handles null IDs without making API calls
+  </Card>
+</CardGroup>
+
+## Future enhancements
+
+The current implementation uses mock/hardcoded favorite IDs. Future versions will integrate with Supabase for user-specific favorite storage:
+
+```typescript
+// Current: Mock ID
+const MOCK_FAVORITE_ID = "max_verstappen";
+
+// Future: User-specific favorites from Supabase
+const { favoriteDriverId } = useUserFavorites();
+const { data: driver } = useFavoriteDriver(favoriteDriverId);
+```
+
+<Warning>
+The favorites feature currently uses hardcoded IDs for demonstration. User authentication and favorite management will be added in a future release.
+</Warning>
+
+## API integration
+
+Favorite data comes from the Jolpica F1 API:
+
+<CodeGroup>
+```typescript Driver details
+jolpicaApi.getDriver(driverId)
+// GET /api/v1/drivers/{driverId}.json
+```
+
+```typescript Constructor details
+jolpicaApi.getConstructor(constructorId)
+// GET /api/v1/constructors/{constructorId}.json
+```
+</CodeGroup>
+
+## Loading states
+
+Both screens implement consistent loading patterns:
+
+```tsx
+const LoadingState = (
+  <View className="flex-1 justify-center items-center">
+    <ActivityIndicator size="large" color={Colors.accent} />
+  </View>
+);
+
+const ErrorState = (
+  <View className="flex-1 justify-center items-center px-5">
+    <Text style={{ fontFamily: Fonts.body, color: Colors.textSecondary }}>
+      Could not load favorite details.
+    </Text>
+  </View>
+);
+```
+
+<Check>
+React Query automatically handles loading, error, and success states, making it easy to provide feedback to users.
+</Check>

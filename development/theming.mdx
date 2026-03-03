@@ -1,0 +1,360 @@
+---
+title: Theming
+description: Learn about Season Journal's theme system, color palette, typography, and styling with NativeWind
+---
+
+Season Journal uses a carefully crafted theme system that combines React Native's styling with the utility-first approach of Tailwind CSS through NativeWind.
+
+## Theme Architecture
+
+The app uses a dual theming approach:
+
+1. **Constants-based theme** - Centralized color and font definitions in `constants/theme.ts`
+2. **NativeWind utilities** - Tailwind CSS classes for rapid styling
+
+This combination provides both type-safe theme access and the convenience of utility classes.
+
+## Color System
+
+The color palette is defined in `constants/theme.ts` and creates a cohesive, modern aesthetic:
+
+```typescript constants/theme.ts
+export const Colors = {
+  background: "#EEEDF2",
+  surface: "rgba(255,255,255,0.85)",
+  surfaceSolid: "#FFFFFF",
+  dark: "#1C1C2E",
+  textPrimary: "#1C1C2E",
+  textSecondary: "#8E8E93",
+  accent: "#FABC05",
+  accentSoft: "#FFF3DC",
+  border: "rgba(0,0,0,0.06)",
+  shadow: "rgba(0,0,0,0.08)",
+  rose: "#D4A0A0",
+  sage: "#B5C9A8",
+  sky: "#B8D4E3",
+  white: "#FFFFFF",
+} as const;
+```
+
+### Color Palette
+
+<CardGroup cols={3}>
+  <Card>
+    **Background**
+    
+    `#EEEDF2` - Soft gray background
+  </Card>
+  
+  <Card>
+    **Surface**
+    
+    `rgba(255,255,255,0.85)` - Glassmorphic cards
+  </Card>
+  
+  <Card>
+    **Accent**
+    
+    `#FABC05` - Racing yellow highlight
+  </Card>
+  
+  <Card>
+    **Rose**
+    
+    `#D4A0A0` - Soft red accent
+  </Card>
+  
+  <Card>
+    **Sage**
+    
+    `#B5C9A8` - Muted green accent
+  </Card>
+  
+  <Card>
+    **Sky**
+    
+    `#B8D4E3` - Soft blue accent
+  </Card>
+</CardGroup>
+
+### Using Theme Colors
+
+**With React Native StyleSheet:**
+
+```tsx
+import { View } from "react-native";
+import { Colors } from "@/constants/theme";
+
+export default function Example() {
+  return (
+    <View style={{ backgroundColor: Colors.surface }}>
+      {/* Content */}
+    </View>
+  );
+}
+```
+
+**With NativeWind classes:**
+
+```tsx
+import { View } from "react-native";
+
+export default function Example() {
+  return (
+    <View className="bg-glass-surface rounded-3xl p-4">
+      {/* Content */}
+    </View>
+  );
+}
+```
+
+## Typography System
+
+Season Journal uses two font families for a modern, readable interface:
+
+### Font Families
+
+- **Inter** - Display text, headings, and UI elements
+- **Nunito** - Body text and content
+
+```typescript constants/theme.ts
+export const Fonts = {
+  display: "Inter_700Bold",
+  displayMedium: "Inter_600SemiBold",
+  displayRegular: "Inter_400Regular",
+  displayItalic: "Inter_400Regular",
+  body: "Nunito_400Regular",
+  bodyMedium: "Nunito_500Medium",
+  bodySemiBold: "Nunito_600SemiBold",
+  bodyBold: "Nunito_700Bold",
+} as const;
+```
+
+### Font Loading
+
+Fonts are loaded in the root layout with `expo-google-fonts`:
+
+```tsx app/_layout.tsx
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
+import {
+  Nunito_400Regular,
+  Nunito_500Medium,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+} from "@expo-google-fonts/nunito";
+import { useFonts } from "expo-font";
+
+const [fontsLoaded] = useFonts({
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Nunito_400Regular,
+  Nunito_500Medium,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+});
+```
+
+### Using Fonts
+
+**With StyleSheet:**
+
+```tsx
+import { Text } from "react-native";
+import { Fonts, Colors } from "@/constants/theme";
+
+<Text style={{ fontFamily: Fonts.display, color: Colors.textPrimary }}>
+  Championship Standings
+</Text>
+```
+
+**With NativeWind:**
+
+```tsx
+import { Text } from "react-native";
+
+<Text className="font-inter-bold text-glass-dark text-2xl">
+  Championship Standings
+</Text>
+```
+
+## NativeWind Configuration
+
+NativeWind brings Tailwind CSS to React Native. The configuration extends Tailwind with custom theme values:
+
+```typescript tailwind.config.ts
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./app/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+  ],
+  presets: [require("nativewind/preset")],
+  theme: {
+    extend: {
+      colors: {
+        glass: {
+          bg: "#EEEDF2",
+          surface: "rgba(255,255,255,0.85)",
+          solid: "#FFFFFF",
+          dark: "#1C1C2E",
+          accent: "#E8A838",
+          "accent-soft": "#FFF3DC",
+          border: "rgba(0,0,0,0.06)",
+          rose: "#D4A0A0",
+          sage: "#B5C9A8",
+          sky: "#B8D4E3",
+        },
+      },
+      fontFamily: {
+        inter: ["Inter_400Regular"],
+        "inter-medium": ["Inter_500Medium"],
+        "inter-semibold": ["Inter_600SemiBold"],
+        "inter-bold": ["Inter_700Bold"],
+        nunito: ["Nunito_400Regular"],
+        "nunito-medium": ["Nunito_500Medium"],
+        "nunito-semibold": ["Nunito_600SemiBold"],
+        "nunito-bold": ["Nunito_700Bold"],
+      },
+      borderRadius: {
+        "2xl": "20px",
+        "3xl": "24px",
+        "4xl": "28px",
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;
+```
+
+### Custom Tailwind Classes
+
+The configuration adds custom utility classes:
+
+**Colors:**
+- `bg-glass-bg` - Background color
+- `bg-glass-surface` - Glassmorphic surface
+- `bg-glass-accent` - Accent color
+- `text-glass-dark` - Primary text
+- `border-glass-border` - Subtle borders
+
+**Fonts:**
+- `font-inter-bold` - Inter bold (700)
+- `font-inter-semibold` - Inter semibold (600)
+- `font-nunito-bold` - Nunito bold (700)
+- `font-nunito-semibold` - Nunito semibold (600)
+
+**Border Radius:**
+- `rounded-2xl` - 20px radius
+- `rounded-3xl` - 24px radius
+- `rounded-4xl` - 28px radius
+
+## Styling Patterns
+
+### Glassmorphism
+
+Season Journal uses glassmorphic design for modern, elevated surfaces:
+
+```tsx
+<View className="bg-glass-surface rounded-3xl p-5 border border-glass-border">
+  {/* Glassmorphic card content */}
+</View>
+```
+
+With StyleSheet:
+
+```tsx
+import { Colors } from "@/constants/theme";
+
+const styles = StyleSheet.create({
+  glassCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+  },
+});
+```
+
+### Real Example: Material Top Tabs
+
+From `app/(tabs)/tracking.tsx`:
+
+```tsx
+<TopTabs.Navigator
+  screenOptions={{
+    tabBarStyle: {
+      backgroundColor: Colors.surfaceSolid,
+      marginHorizontal: 20,
+      borderRadius: 24,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+    },
+    tabBarIndicatorStyle: {
+      backgroundColor: Colors.accent,
+      height: 40,
+      borderRadius: 20,
+    },
+    tabBarLabelStyle: {
+      fontFamily: Fonts.bodyBold,
+      fontSize: 14,
+    },
+    tabBarActiveTintColor: Colors.textPrimary,
+    tabBarInactiveTintColor: Colors.textSecondary,
+  }}
+>
+  {/* Tabs */}
+</TopTabs.Navigator>
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Use theme constants for dynamic styles">
+    Import `Colors` and `Fonts` from `@/constants/theme` when using StyleSheet or style props.
+  </Step>
+  
+  <Step title="Use NativeWind for static layouts">
+    Leverage Tailwind classes for spacing, sizing, and static colors.
+  </Step>
+  
+  <Step title="Maintain consistency">
+    Stick to the defined color palette and font system. Avoid hardcoding colors.
+  </Step>
+  
+  <Step title="Test on both platforms">
+    NativeWind compiles differently for iOS and Android. Always test styling changes on both.
+  </Step>
+</Steps>
+
+<Warning>
+Avoid mixing style prop and className on the same element when possible. Choose one approach for clarity.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="State Management" icon="database" href="/development/state-management">
+    Learn about data fetching and state patterns
+  </Card>
+  
+  <Card title="Components" icon="cube" href="/components/overview">
+    Explore available UI components
+  </Card>
+</CardGroup>

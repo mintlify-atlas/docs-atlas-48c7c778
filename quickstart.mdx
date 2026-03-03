@@ -1,80 +1,357 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start
+description: Get started with Season Journal and explore the three main features
 ---
 
-## Get started in three steps
+## Overview
 
-Get your documentation site running locally and make your first customization.
+This guide walks you through using Season Journal's three core features: creating bingo cards for race predictions, viewing championship standings, and managing your favorite drivers and teams.
 
-### Step 1: Set up your local environment
+<Info>
+  Make sure you've completed the [installation guide](/installation) before proceeding.
+</Info>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Launch the app
 
-### Step 2: Deploy your changes
+<Steps>
+  <Step title="Start the development server">
+    Navigate to your project directory and start the Expo server:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```bash
+    cd season-journal
+    pnpm start
+    ```
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Open on your device">
+    Open the app using one of these methods:
+    - Scan the QR code with Expo Go (physical device)
+    - Press `i` for iOS Simulator
+    - Press `a` for Android Emulator
+    - Press `w` for web browser
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Wait for the app to load">
+    The app will compile and load. You'll see the splash screen briefly, followed by the main Bingo Card screen.
+  </Step>
+</Steps>
 
-### Step 3: Go live
+## Feature 1: Race predictions bingo
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+The bingo feature lets you create custom prediction cards for race weekends.
+
+<Steps>
+  <Step title="View the bingo grid">
+    When you first open the app, you'll see:
+    - A 4x4 grid with 16 empty cells
+    - A progress bar at the top (showing 0/16)
+    - The "Bingo Card" screen title
+
+    The grid component is rendered in `app/(tabs)/index.tsx`:
+
+    ```tsx app/(tabs)/index.tsx
+    export default function BingoScreen() {
+      return (
+        <View className="flex-1 px-5 pt-16" style={{ backgroundColor: Colors.background }}>
+          <Text style={{ fontFamily: Fonts.display, fontSize: 28 }}>
+            Bingo Card
+          </Text>
+          <Text style={{ fontFamily: Fonts.body, fontSize: 15 }}>
+            Make your race predictions
+          </Text>
+          <BingoGrid />
+        </View>
+      );
+    }
+    ```
+  </Step>
+
+  <Step title="Edit a bingo cell">
+    To customize a cell with your prediction:
+
+    1. **Long-press** any cell in the grid
+    2. An edit button appears on that cell
+    3. Tap the edit button to open the canvas editor
+    4. The canvas editor modal provides tools to:
+       - Add text labels
+       - Insert images
+       - Draw freehand
+       - Pick colors with the eyedropper
+    5. Tap "Save" to apply your changes
+
+    The long-press interaction is handled in `components/bingo/bingo-grid.tsx`:
+
+    ```tsx components/bingo/bingo-grid.tsx
+    const handleLongPress = useCallback((index: number) => {
+      setEditingIndex(index);
+    }, []);
+
+    const handleEditPress = useCallback((index: number) => {
+      setEditingIndex(null);
+      setCanvasCellIndex(index);
+    }, []);
+    ```
+  </Step>
+
+  <Step title="Mark predictions as complete">
+    During the race, tap any cell to check it off as your prediction comes true:
+
+    - Tap a cell once to mark it as checked (shows a checkmark)
+    - Tap again to uncheck it
+    - The progress bar updates automatically (e.g., 3/16)
+
+    The state management uses a custom hook in `hooks/use-bingo-state.ts`:
+
+    ```tsx hooks/use-bingo-state.ts
+    export function useBingoState() {
+      const [cells, setCells] = useState<BingoCell[]>(createInitialCells);
+
+      const checkedCount = useMemo(
+        () => cells.filter((c) => c.checked).length,
+        [cells]
+      );
+
+      const toggleCheck = useCallback((index: number) => {
+        setCells((prev) =>
+          prev.map((cell, i) =>
+            i === index ? { ...cell, checked: !cell.checked } : cell
+          )
+        );
+      }, []);
+
+      return { cells, checkedCount, total: GRID_SIZE, toggleCheck, editCell };
+    }
+    ```
+  </Step>
+
+  <Step title="Track your progress">
+    The progress bar at the top shows your completion rate:
+    - Visual bar fills from left to right
+    - Text displays "X/16" count
+    - Updates in real-time as you check cells
+  </Step>
+</Steps>
+
+<Note>
+  Your bingo card state is currently stored in memory. Closing the app will reset the grid.
+</Note>
+
+## Feature 2: Championship tracking
+
+View real-time standings for drivers and constructors.
+
+<Steps>
+  <Step title="Navigate to the Tracking tab">
+    Tap the "Tracking" tab in the bottom navigation bar. You'll see two sub-tabs:
+    - **Drivers**: World Drivers' Championship standings
+    - **Constructors**: Constructors' Championship standings
+
+    The tracking screen uses Material Top Tabs in `app/(tabs)/tracking.tsx`:
+
+    ```tsx app/(tabs)/tracking.tsx
+    export default function TrackingScreen() {
+      return (
+        <View style={{ flex: 1, backgroundColor: Colors.background }}>
+          <TopTabs.Navigator>
+            <TopTabs.Screen
+              name="Drivers"
+              component={DriversScreen}
+              options={{ title: "Drivers" }}
+            />
+            <TopTabs.Screen
+              name="Constructors"
+              component={ConstructorsScreen}
+              options={{ title: "Constructors" }}
+            />
+          </TopTabs.Navigator>
+        </View>
+      );
+    }
+    ```
+  </Step>
+
+  <Step title="View driver standings">
+    The Drivers tab displays:
+    - Current position for each driver
+    - Driver name and team
+    - Total points accumulated
+    - Data fetched from the Jolpica F1 API
+
+    The data is fetched using TanStack React Query in `hooks/queries/useStandings.ts`:
+
+    ```tsx hooks/queries/useStandings.ts
+    export function useDriverStandings(year: string = "current") {
+      return useQuery({
+        queryKey: ["driverStandings", year],
+        queryFn: () => jolpicaApi.getDriverStandings(year),
+      });
+    }
+    ```
+  </Step>
+
+  <Step title="View constructor standings">
+    Switch to the Constructors tab to see:
+    - Team positions in the championship
+    - Constructor names
+    - Total points for each team
+    - Live data from the current F1 season
+
+    ```tsx hooks/queries/useStandings.ts
+    export function useConstructorStandings(year: string = "current") {
+      return useQuery({
+        queryKey: ["constructorStandings", year],
+        queryFn: () => jolpicaApi.getConstructorStandings(year),
+      });
+    }
+    ```
+  </Step>
+</Steps>
+
+<Info>
+  Standings data is cached by TanStack React Query for optimal performance. Pull to refresh to get the latest data.
+</Info>
+
+## Feature 3: Favorites
+
+Save and quickly access your favorite drivers and teams.
+
+<Steps>
+  <Step title="Navigate to the Favourites tab">
+    Tap the "Favourites" tab in the bottom navigation. You'll see two sub-tabs:
+    - **Driver**: Your favorite driver
+    - **Team**: Your favorite constructor team
+  </Step>
+
+  <Step title="Select a favorite driver">
+    In the Driver tab:
+    1. Browse or search for your favorite driver
+    2. Select a driver to save them as your favorite
+    3. View detailed stats and information
+    4. Access their current championship position
+
+    The favorites screen structure in `app/(tabs)/favourites.tsx`:
+
+    ```tsx app/(tabs)/favourites.tsx
+    export default function FavouritesScreen() {
+      return (
+        <View style={{ flex: 1, backgroundColor: Colors.background }}>
+          <TopTabs.Navigator>
+            <TopTabs.Screen
+              name="Driver"
+              component={FavouriteDriverScreen}
+              options={{ title: "Driver" }}
+            />
+            <TopTabs.Screen
+              name="Team"
+              component={FavouriteTeamScreen}
+              options={{ title: "Team" }}
+            />
+          </TopTabs.Navigator>
+        </View>
+      );
+    }
+    ```
+  </Step>
+
+  <Step title="Select a favorite team">
+    Switch to the Team tab to:
+    1. Browse constructor teams
+    2. Save your favorite team
+    3. View team statistics and current standings
+    4. Track their season performance
+
+    Favorites are managed with React Query in `hooks/queries/useFavorites.ts`:
+
+    ```tsx hooks/queries/useFavorites.ts
+    export function useFavoriteDriver(driverId: string | null) {
+      return useQuery({
+        queryKey: ["favoriteDriver", driverId],
+        queryFn: () => (driverId ? jolpicaApi.getDriver(driverId) : null),
+        enabled: !!driverId,
+      });
+    }
+
+    export function useFavoriteTeam(constructorId: string | null) {
+      return useQuery({
+        queryKey: ["favoriteTeam", constructorId],
+        queryFn: () => (constructorId ? jolpicaApi.getConstructor(constructorId) : null),
+        enabled: !!constructorId,
+      });
+    }
+    ```
+  </Step>
+</Steps>
+
+## Understanding the navigation
+
+Season Journal uses Expo Router with file-based navigation:
+
+```text
+app/
+├── _layout.tsx          # Root layout with fonts and providers
+└── (tabs)/              # Bottom tab navigation group
+    ├── _layout.tsx      # Tab bar configuration
+    ├── index.tsx        # Bingo Card screen (default)
+    ├── tracking.tsx     # Championship standings
+    └── favourites.tsx   # Favorites management
+```
+
+The root layout in `app/_layout.tsx` sets up:
+- Custom fonts (Inter and Nunito)
+- TanStack React Query provider
+- Global theme colors
+- Status bar styling
+
+```tsx app/_layout.tsx
+export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Nunito_400Regular,
+    Nunito_500Medium,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+  });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+      <StatusBar style="dark" />
+    </QueryClientProvider>
+  );
+}
+```
+
+## Key interactions summary
+
+<CardGroup cols={2}>
+  <Card title="Tap" icon="hand-pointer">
+    Toggle bingo cell checked state
+  </Card>
+  <Card title="Long press" icon="hand">
+    Enter edit mode for a bingo cell
+  </Card>
+  <Card title="Swipe" icon="arrow-right-arrow-left">
+    Navigate between top tabs (Drivers/Constructors, Driver/Team)
+  </Card>
+  <Card title="Pull down" icon="arrow-down">
+    Refresh standings and favorites data
+  </Card>
+</CardGroup>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
+Now that you're familiar with the core features, you can:
 
-<CardGroup cols={2}>
+- Explore the canvas editor's drawing and text tools
+- Customize your bingo cards with images and colors
+- Track your favorite drivers throughout the season
+- Monitor championship standings after each race
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
+<Card title="Learn more about the codebase" icon="code" href="/development/project-structure">
+  Dive deeper into the app's architecture and component structure
 </Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

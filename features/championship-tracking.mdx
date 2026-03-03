@@ -1,0 +1,264 @@
+---
+title: Championship tracking
+description: View real-time Formula 1 driver and constructor standings
+---
+
+The championship tracking feature provides up-to-date standings for both drivers and constructors, powered by the Jolpica F1 API. Users can switch between views using a top tab navigator.
+
+## Navigation structure
+
+The tracking screen uses React Navigation's Material Top Tabs:
+
+```tsx app/(tabs)/tracking.tsx
+import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+
+const TopTabs = createMaterialTopTabNavigator();
+
+export default function TrackingScreen() {
+  return (
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <TopTabs.Navigator
+        screenOptions={{
+          tabBarStyle: {
+            backgroundColor: Colors.surfaceSolid,
+            marginHorizontal: 20,
+            borderRadius: 24,
+            height: 48,
+          },
+          tabBarIndicatorStyle: {
+            backgroundColor: Colors.accent,
+            height: 40,
+            borderRadius: 20,
+            top: 4,
+          },
+          tabBarLabelStyle: {
+            fontFamily: Fonts.bodyBold,
+            fontSize: 14,
+            textTransform: "none",
+          },
+        }}
+      >
+        <TopTabs.Screen name="Drivers" component={DriversScreen} />
+        <TopTabs.Screen name="Constructors" component={ConstructorsScreen} />
+      </TopTabs.Navigator>
+    </View>
+  );
+}
+```
+
+<Info>
+The tab bar has a custom rounded indicator that animates smoothly between tabs.
+</Info>
+
+## Driver standings
+
+The `DriversScreen` component displays the championship standings for all drivers:
+
+```tsx components/screens/drivers-screen.tsx
+export default function DriversScreen() {
+  const { data: standings, isLoading, isError } = useDriverStandings(DEFAULT_YEAR);
+
+  const renderItem = useCallback(({ item }: { item: DriverStanding }) => {
+    return (
+      <View className="flex-row items-center justify-between bg-surfaceSolid p-4 mb-3 rounded-2xl">
+        <View className="flex-row items-center flex-1">
+          <Text style={{ fontFamily: Fonts.displayMedium, fontSize: 18, width: 32 }}>
+            {item.position}
+          </Text>
+          <View className="ml-3 flex-1">
+            <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 16 }}>
+              {item.Driver.givenName} {item.Driver.familyName}
+            </Text>
+            <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary }}>
+              {item.Constructors[0]?.name}
+            </Text>
+          </View>
+        </View>
+        <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 16 }}>
+          {item.points} PTS
+        </Text>
+      </View>
+    );
+  }, []);
+
+  return (
+    <FlatList
+      data={standings}
+      keyExtractor={(item) => item.Driver.driverId}
+      renderItem={renderItem}
+    />
+  );
+}
+```
+
+### Driver standing data structure
+
+```typescript
+type DriverStanding = {
+  position: string;
+  points: string;
+  Driver: {
+    driverId: string;
+    givenName: string;
+    familyName: string;
+  };
+  Constructors: Array<{
+    name: string;
+  }>;
+};
+```
+
+## Constructor standings
+
+The `ConstructorsScreen` displays team championships:
+
+```tsx components/screens/constructors-screen.tsx
+export default function ConstructorsScreen() {
+  const { data: standings, isLoading, isError } = useConstructorStandings(DEFAULT_YEAR);
+
+  const renderItem = useCallback(({ item }: { item: ConstructorStanding }) => {
+    return (
+      <View className="flex-row items-center justify-between bg-surfaceSolid p-4 mb-3 rounded-2xl">
+        <View className="flex-row items-center flex-1">
+          <Text style={{ fontFamily: Fonts.displayMedium, fontSize: 18, width: 32 }}>
+            {item.position}
+          </Text>
+          <View className="ml-3 flex-1">
+            <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 16 }}>
+              {item.Constructor.name}
+            </Text>
+            <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary }}>
+              {item.Constructor.nationality}
+            </Text>
+          </View>
+        </View>
+        <Text style={{ fontFamily: Fonts.bodyBold, fontSize: 16 }}>
+          {item.points} PTS
+        </Text>
+      </View>
+    );
+  }, []);
+
+  return (
+    <FlatList
+      data={standings}
+      keyExtractor={(item) => item.Constructor.constructorId}
+      renderItem={renderItem}
+    />
+  );
+}
+```
+
+### Constructor standing data structure
+
+```typescript
+type ConstructorStanding = {
+  position: string;
+  points: string;
+  Constructor: {
+    constructorId: string;
+    name: string;
+    nationality: string;
+  };
+};
+```
+
+## Data fetching with React Query
+
+The app uses React Query hooks to fetch standings data:
+
+```typescript hooks/queries/useStandings.ts
+import { useQuery } from "@tanstack/react-query";
+import { jolpicaApi } from "@/services/jolpica/api";
+
+export function useDriverStandings(year: string = "current") {
+  return useQuery({
+    queryKey: ["driverStandings", year],
+    queryFn: () => jolpicaApi.getDriverStandings(year),
+  });
+}
+
+export function useConstructorStandings(year: string = "current") {
+  return useQuery({
+    queryKey: ["constructorStandings", year],
+    queryFn: () => jolpicaApi.getConstructorStandings(year),
+  });
+}
+```
+
+<CardGroup cols={2}>
+  <Card title="Automatic caching" icon="database">
+    React Query caches standings data to reduce API calls
+  </Card>
+  <Card title="Loading states" icon="spinner">
+    Built-in loading and error states for better UX
+  </Card>
+  <Card title="Background updates" icon="rotate">
+    Standings refresh automatically when the app regains focus
+  </Card>
+  <Card title="Year support" icon="calendar">
+    Query by season year or use "current" for the active season
+  </Card>
+</CardGroup>
+
+## Jolpica F1 API integration
+
+The app fetches data from the Jolpica F1 API, which provides comprehensive Formula 1 statistics.
+
+### API endpoints
+
+<CodeGroup>
+```typescript Driver standings
+jolpicaApi.getDriverStandings(year)
+// GET /api/v1/current/driverStandings.json
+```
+
+```typescript Constructor standings
+jolpicaApi.getConstructorStandings(year)
+// GET /api/v1/current/constructorStandings.json
+```
+</CodeGroup>
+
+<Info>
+The Jolpica F1 API is a free, open API that aggregates Formula 1 data from official sources.
+</Info>
+
+## Loading and error states
+
+Both screens implement consistent loading and error handling:
+
+```tsx
+if (isLoading) {
+  return (
+    <View className="flex-1 justify-center items-center">
+      <ActivityIndicator size="large" color={Colors.accent} />
+    </View>
+  );
+}
+
+if (isError) {
+  return (
+    <View className="flex-1 justify-center items-center px-5">
+      <Text style={{ fontFamily: Fonts.body, color: Colors.rose }}>
+        Error loading standings.
+      </Text>
+    </View>
+  );
+}
+```
+
+## Performance optimization
+
+The screens use `useCallback` to memoize render functions and prevent unnecessary re-renders:
+
+```tsx
+const renderItem = useCallback(({ item }: { item: DriverStanding }) => {
+  // ... render logic
+}, []);
+```
+
+`FlatList` efficiently renders long lists of standings with built-in virtualization.
+
+<Check>
+Standings data automatically updates when returning to the app, ensuring users always see current championship positions.
+</Check>

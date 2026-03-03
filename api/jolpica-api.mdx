@@ -1,0 +1,341 @@
+---
+title: "Jolpica F1 API"
+description: "Integration with the Jolpica Ergast F1 API for fetching Formula 1 historical and current data"
+---
+
+## Overview
+
+The Jolpica API service provides a typed TypeScript wrapper around the [Jolpica Ergast F1 API](https://api.jolpi.ca/ergast/f1), which offers comprehensive Formula 1 data including driver standings, constructor standings, and detailed information about drivers and constructors.
+
+All methods in the `jolpicaApi` object are asynchronous and return Promises.
+
+## Base URL
+
+```typescript
+API_CONFIG.JOLPICA_BASE_URL = "https://api.jolpi.ca/ergast/f1"
+```
+
+## Methods
+
+### getDriverStandings
+
+Fetches the driver championship standings for a specific season.
+
+```typescript
+async getDriverStandings(year?: string): Promise<DriverStanding[]>
+```
+
+<ParamField path="year" type="string" default="current">
+  The F1 season year (e.g., "2024") or "current" for the ongoing season
+</ParamField>
+
+<ResponseField name="DriverStanding[]" type="array">
+  Array of driver standings with the following structure:
+  
+  <ResponseField name="position" type="string">
+    Current position in the championship (numeric string)
+  </ResponseField>
+  
+  <ResponseField name="positionText" type="string">
+    Text representation of the position
+  </ResponseField>
+  
+  <ResponseField name="points" type="string">
+    Total championship points (numeric string)
+  </ResponseField>
+  
+  <ResponseField name="wins" type="string">
+    Number of race wins (numeric string)
+  </ResponseField>
+  
+  <ResponseField name="Driver" type="Driver">
+    Driver details object containing driverId, permanentNumber, code, url, givenName, familyName, dateOfBirth, and nationality
+  </ResponseField>
+  
+  <ResponseField name="Constructors" type="Constructor[]">
+    Array of constructors the driver has competed for in the season
+  </ResponseField>
+</ResponseField>
+
+**Endpoint:** `GET /{year}/driverStandings.json`
+
+**Example:**
+
+```typescript
+import { jolpicaApi } from '@/services/jolpica/api';
+
+// Get current season driver standings
+const standings = await jolpicaApi.getDriverStandings();
+
+// Get 2023 driver standings
+const standings2023 = await jolpicaApi.getDriverStandings('2023');
+```
+
+**Error Handling:**
+
+Throws an error with message "Failed to fetch driver standings" if the HTTP response is not ok.
+
+---
+
+### getConstructorStandings
+
+Fetches the constructor (team) championship standings for a specific season.
+
+```typescript
+async getConstructorStandings(year?: string): Promise<ConstructorStanding[]>
+```
+
+<ParamField path="year" type="string" default="current">
+  The F1 season year (e.g., "2024") or "current" for the ongoing season
+</ParamField>
+
+<ResponseField name="ConstructorStanding[]" type="array">
+  Array of constructor standings with the following structure:
+  
+  <ResponseField name="position" type="string">
+    Current position in the championship (numeric string)
+  </ResponseField>
+  
+  <ResponseField name="positionText" type="string">
+    Text representation of the position
+  </ResponseField>
+  
+  <ResponseField name="points" type="string">
+    Total championship points (numeric string)
+  </ResponseField>
+  
+  <ResponseField name="wins" type="string">
+    Number of race wins (numeric string)
+  </ResponseField>
+  
+  <ResponseField name="Constructor" type="Constructor">
+    Constructor details object containing constructorId, url, name, and nationality
+  </ResponseField>
+</ResponseField>
+
+**Endpoint:** `GET /{year}/constructorStandings.json`
+
+**Example:**
+
+```typescript
+import { jolpicaApi } from '@/services/jolpica/api';
+
+// Get current season constructor standings
+const standings = await jolpicaApi.getConstructorStandings();
+
+// Get 2023 constructor standings
+const standings2023 = await jolpicaApi.getConstructorStandings('2023');
+```
+
+**Error Handling:**
+
+Throws an error with message "Failed to fetch constructor standings" if the HTTP response is not ok.
+
+---
+
+### getDriver
+
+Fetches detailed information about a specific driver by their ID.
+
+```typescript
+async getDriver(driverId: string): Promise<Driver | null>
+```
+
+<ParamField path="driverId" type="string" required>
+  The unique driver identifier (e.g., "alonso", "max_verstappen", "hamilton")
+</ParamField>
+
+<ResponseField name="Driver" type="Driver | null">
+  Driver object or null if not found:
+  
+  <ResponseField name="driverId" type="string">
+    Unique driver identifier
+  </ResponseField>
+  
+  <ResponseField name="permanentNumber" type="string">
+    Driver's permanent racing number
+  </ResponseField>
+  
+  <ResponseField name="code" type="string">
+    Three-letter driver code (e.g., "VER", "HAM")
+  </ResponseField>
+  
+  <ResponseField name="url" type="string">
+    Wikipedia URL for the driver
+  </ResponseField>
+  
+  <ResponseField name="givenName" type="string">
+    Driver's first name
+  </ResponseField>
+  
+  <ResponseField name="familyName" type="string">
+    Driver's last name
+  </ResponseField>
+  
+  <ResponseField name="dateOfBirth" type="string">
+    Date of birth in ISO format (YYYY-MM-DD)
+  </ResponseField>
+  
+  <ResponseField name="nationality" type="string">
+    Driver's nationality
+  </ResponseField>
+</ResponseField>
+
+**Endpoint:** `GET /drivers/{driverId}.json`
+
+**Example:**
+
+```typescript
+import { jolpicaApi } from '@/services/jolpica/api';
+
+// Get Max Verstappen's information
+const driver = await jolpicaApi.getDriver('max_verstappen');
+
+if (driver) {
+  console.log(`${driver.givenName} ${driver.familyName}`);
+  console.log(`Number: ${driver.permanentNumber}`);
+  console.log(`Code: ${driver.code}`);
+}
+```
+
+**Error Handling:**
+
+Throws an error with message "Failed to fetch driver" if the HTTP response is not ok. Returns `null` if the driver is not found in the response data.
+
+---
+
+### getConstructor
+
+Fetches detailed information about a specific constructor (team) by their ID.
+
+```typescript
+async getConstructor(constructorId: string): Promise<Constructor | null>
+```
+
+<ParamField path="constructorId" type="string" required>
+  The unique constructor identifier (e.g., "red_bull", "ferrari", "mercedes")
+</ParamField>
+
+<ResponseField name="Constructor" type="Constructor | null">
+  Constructor object or null if not found:
+  
+  <ResponseField name="constructorId" type="string">
+    Unique constructor identifier
+  </ResponseField>
+  
+  <ResponseField name="url" type="string">
+    Wikipedia URL for the constructor
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Full name of the constructor/team
+  </ResponseField>
+  
+  <ResponseField name="nationality" type="string">
+    Constructor's nationality
+  </ResponseField>
+</ResponseField>
+
+**Endpoint:** `GET /constructors/{constructorId}.json`
+
+**Example:**
+
+```typescript
+import { jolpicaApi } from '@/services/jolpica/api';
+
+// Get Red Bull Racing information
+const constructor = await jolpicaApi.getConstructor('red_bull');
+
+if (constructor) {
+  console.log(`${constructor.name}`);
+  console.log(`Nationality: ${constructor.nationality}`);
+}
+```
+
+**Error Handling:**
+
+Throws an error with message "Failed to fetch constructor" if the HTTP response is not ok. Returns `null` if the constructor is not found in the response data.
+
+---
+
+## Type Definitions
+
+### Driver
+
+```typescript
+interface Driver {
+  driverId: string;
+  permanentNumber: string;
+  code: string;
+  url: string;
+  givenName: string;
+  familyName: string;
+  dateOfBirth: string;
+  nationality: string;
+}
+```
+
+### Constructor
+
+```typescript
+interface Constructor {
+  constructorId: string;
+  url: string;
+  name: string;
+  nationality: string;
+}
+```
+
+### DriverStanding
+
+```typescript
+interface DriverStanding {
+  position: string;
+  positionText: string;
+  points: string;
+  wins: string;
+  Driver: Driver;
+  Constructors: Constructor[];
+}
+```
+
+### ConstructorStanding
+
+```typescript
+interface ConstructorStanding {
+  position: string;
+  positionText: string;
+  points: string;
+  wins: string;
+  Constructor: Constructor;
+}
+```
+
+## Error Handling Patterns
+
+All API methods follow a consistent error handling pattern:
+
+1. Make fetch request to the Jolpica API
+2. Check if response is ok (`response.ok`)
+3. If not ok, throw a descriptive error
+4. Parse JSON response
+5. Extract relevant data from the nested response structure
+6. Return typed data or null/empty array if not found
+
+**Example with try-catch:**
+
+```typescript
+try {
+  const standings = await jolpicaApi.getDriverStandings('2024');
+  // Process standings...
+} catch (error) {
+  console.error('Failed to load driver standings:', error);
+  // Handle error appropriately
+}
+```
+
+## Source Code
+
+Implementation: `~/workspace/source/services/jolpica/api.ts`
+
+Configuration: `~/workspace/source/lib/api/config.ts`

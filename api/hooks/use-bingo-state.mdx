@@ -1,0 +1,100 @@
+---
+title: useBingoState
+description: Hook for managing bingo card state and cell interactions
+---
+
+The `useBingoState` hook manages the state of a 4x4 bingo grid, including cell checked status, images, and canvas state.
+
+## Usage
+
+```typescript
+import { useBingoState } from "@/hooks/use-bingo-state";
+
+function BingoGrid() {
+  const { cells, checkedCount, total, toggleCheck, editCell } = useBingoState();
+
+  return (
+    <View>
+      <Text>Checked: {checkedCount}/{total}</Text>
+      {cells.map((cell, index) => (
+        <BingoCell
+          key={index}
+          cell={cell}
+          onToggle={() => toggleCheck(index)}
+          onEdit={(uri, state) => editCell(index, uri, state)}
+        />
+      ))}
+    </View>
+  );
+}
+```
+
+## Return Values
+
+<ResponseField name="cells" type="BingoCell[]">
+  Array of 16 bingo cells (4x4 grid). Each cell contains:
+  
+  <ResponseField name="checked" type="boolean">
+    Whether the cell is marked as checked
+  </ResponseField>
+  
+  <ResponseField name="imageUri" type="string | null">
+    URI of the rendered canvas image for this cell
+  </ResponseField>
+  
+  <ResponseField name="canvasState" type="CanvasState | null">
+    Saved canvas editor state for this cell, containing paths, texts, images, and tool settings
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="checkedCount" type="number">
+  Number of cells currently marked as checked
+</ResponseField>
+
+<ResponseField name="total" type="number">
+  Total number of cells in the grid (always 16)
+</ResponseField>
+
+<ResponseField name="toggleCheck" type="(index: number) => void">
+  Function to toggle the checked status of a cell at the given index
+</ResponseField>
+
+<ResponseField name="editCell" type="(index: number, uri: string, canvasState: CanvasState) => void">
+  Function to update a cell with a new image URI and canvas state
+  
+  <ParamField path="index" type="number" required>
+    Index of the cell to update (0-15)
+  </ParamField>
+  
+  <ParamField path="uri" type="string" required>
+    URI of the rendered canvas image
+  </ParamField>
+  
+  <ParamField path="canvasState" type="CanvasState" required>
+    Canvas state to save for future editing
+  </ParamField>
+</ResponseField>
+
+## Cell Data Structure
+
+Each cell in the `cells` array has the following structure:
+
+```typescript
+type BingoCell = {
+  checked: boolean;
+  imageUri: string | null;
+  canvasState: CanvasState | null;
+};
+```
+
+Initially, all cells are created with:
+- `checked: false`
+- `imageUri: null`
+- `canvasState: null`
+
+## Implementation Details
+
+- The grid is always 4x4 (16 cells)
+- Cells are stored as an array indexed 0-15
+- The `checkedCount` is automatically computed when cells change
+- All state updates are immutable to ensure proper React rendering

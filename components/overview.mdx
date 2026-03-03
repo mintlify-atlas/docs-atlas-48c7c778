@@ -1,0 +1,146 @@
+---
+title: Components Overview
+description: Understanding the component architecture in Season Journal
+---
+
+Season Journal follows a modular component architecture that separates concerns between bingo functionality, screen layouts, and reusable UI elements.
+
+## Directory Structure
+
+The component hierarchy is organized into three main categories:
+
+```
+components/
+├── bingo/              # Bingo board and canvas editing components
+│   ├── bingo-grid.tsx
+│   ├── bingo-cell.tsx
+│   ├── bingo-progress-bar.tsx
+│   └── canvas/        # Canvas editor sub-components
+│       ├── canvas-editor-modal.tsx
+│       ├── canvas-toolbar.tsx
+│       ├── canvas-types.ts
+│       ├── draggable-text.tsx
+│       ├── draggable-image.tsx
+│       ├── drawing-layer.tsx
+│       └── eyedropper-layer.tsx
+├── screens/           # Full-screen layouts and views
+│   ├── drivers-screen.tsx
+│   ├── constructors-screen.tsx
+│   ├── favourite-driver-screen.tsx
+│   └── favourite-team-screen.tsx
+├── ui/                # Reusable UI components
+│   ├── icon-symbol.tsx
+│   └── icon-symbol.ios.tsx
+└── journal-tab-bar.tsx # Custom navigation tab bar
+```
+
+## Component Patterns
+
+### Composition Over Configuration
+
+Components are designed to be composed together rather than configured through extensive props. For example, the `BingoGrid` component internally manages `BingoCell` and `BingoProgressBar` components:
+
+```tsx
+export default function BingoGrid() {
+  const { cells, checkedCount, total, toggleCheck, editCell } = useBingoState();
+  
+  return (
+    <>
+      <BingoProgressBar checked={checkedCount} total={total} />
+      <View>
+        {rows.map((row, rowIdx) => (
+          <View key={rowIdx} className="flex-row">
+            {row.map((cell, colIdx) => (
+              <BingoCell
+                key={index}
+                cell={cell}
+                index={index}
+                isEditing={editingIndex === index}
+                onPress={handlePress}
+                onLongPress={handleLongPress}
+                onEditPress={handleEditPress}
+              />
+            ))}
+          </View>
+        ))}
+      </View>
+    </>
+  );
+}
+```
+
+### State Management with Custom Hooks
+
+Components delegate state management to custom hooks rather than managing complex state internally:
+
+- `useBingoState()` - Manages bingo board state, cell checking, and editing
+- `useCanvasEditor()` - Handles canvas drawing, text, and image manipulation
+
+### Memoization for Performance
+
+All presentational components use `memo()` to prevent unnecessary re-renders:
+
+```tsx
+export default memo(BingoCell);
+export default memo(BingoProgressBar);
+export default memo(DraggableText);
+```
+
+## Styling Approach
+
+### NativeWind Integration
+
+The app uses NativeWind (Tailwind CSS for React Native) alongside inline styles:
+
+```tsx
+<View className="flex-row items-center justify-between">
+  <Text style={{ fontFamily: Fonts.displayMedium, fontSize: 15 }}>
+    Progress
+  </Text>
+</View>
+```
+
+### Theme Constants
+
+Colors, fonts, and sizing are centralized in `@/constants/theme`:
+
+```tsx
+import { Colors, Fonts } from '@/constants/theme';
+
+style={{
+  backgroundColor: Colors.surfaceSolid,
+  fontFamily: Fonts.displayMedium,
+  borderColor: Colors.border
+}}
+```
+
+## Gesture Handling
+
+Interactive components use React Native's `PanResponder` for complex gestures:
+
+- **Drawing**: Captured in `DrawingLayer` with path tracking
+- **Dragging**: Implemented in `DraggableText` and `DraggableImage` with position updates
+- **Pinch-to-zoom**: Multi-touch gestures for scaling text and images
+- **Long press**: Used in `BingoCell` to enter edit mode
+
+## Platform Differences
+
+Some components have platform-specific implementations:
+
+```
+icon-symbol.tsx       # Android/default implementation
+icon-symbol.ios.tsx   # iOS-specific SF Symbols
+```
+
+React Native automatically selects the correct file based on platform.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Bingo Components" icon="grid" href="/components/bingo-components">
+    Explore the bingo board and canvas editing system
+  </Card>
+  <Card title="UI Components" icon="paintbrush" href="/components/ui-components">
+    Learn about reusable UI components and styling
+  </Card>
+</CardGroup>

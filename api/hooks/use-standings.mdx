@@ -1,0 +1,200 @@
+---
+title: Standings Hooks
+description: React Query hooks for fetching driver and constructor championship standings
+---
+
+Hooks for fetching Formula 1 championship standings data using React Query.
+
+## useDriverStandings
+
+Fetches driver championship standings for a specific year.
+
+### Usage
+
+```typescript
+import { useDriverStandings } from "@/hooks/queries/useStandings";
+
+function DriverStandingsTable() {
+  // Current season
+  const { data: standings, isLoading, error } = useDriverStandings();
+
+  // Specific year
+  const { data: standings2023 } = useDriverStandings("2023");
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  return (
+    <View>
+      {standings?.map((standing, index) => (
+        <View key={standing.Driver.driverId}>
+          <Text>{index + 1}. {standing.Driver.givenName} {standing.Driver.familyName}</Text>
+          <Text>Points: {standing.points}</Text>
+          <Text>Wins: {standing.wins}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+```
+
+### Parameters
+
+<ParamField path="year" type="string" default="current">
+  The season year to fetch standings for. Defaults to `"current"` for the current season.
+  
+  Examples: `"2024"`, `"2023"`, `"current"`
+</ParamField>
+
+### Return Value
+
+Returns a React Query `UseQueryResult` object with:
+
+<ResponseField name="data" type="DriverStanding[]">
+  Array of driver standings from the Jolpica API
+  
+  ```typescript
+  type DriverStanding = {
+    position: string;
+    positionText: string;
+    points: string;
+    wins: string;
+    Driver: {
+      driverId: string;
+      permanentNumber: string;
+      code: string;
+      givenName: string;
+      familyName: string;
+      dateOfBirth: string;
+      nationality: string;
+    };
+    Constructors: Constructor[];
+  };
+  ```
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  Loading state
+</ResponseField>
+
+<ResponseField name="error" type="Error | null">
+  Error object if the query failed
+</ResponseField>
+
+<ResponseField name="refetch" type="() => void">
+  Function to manually refetch the data
+</ResponseField>
+
+### Implementation Details
+
+- Query key: `["driverStandings", year]`
+- Uses `jolpicaApi.getDriverStandings()` to fetch data
+- Always enabled (no conditional fetching)
+- Defaults to current season when no year is provided
+
+## useConstructorStandings
+
+Fetches constructor (team) championship standings for a specific year.
+
+### Usage
+
+```typescript
+import { useConstructorStandings } from "@/hooks/queries/useStandings";
+
+function ConstructorStandingsTable() {
+  // Current season
+  const { data: standings, isLoading, error } = useConstructorStandings();
+
+  // Specific year
+  const { data: standings2023 } = useConstructorStandings("2023");
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  return (
+    <View>
+      {standings?.map((standing, index) => (
+        <View key={standing.Constructor.constructorId}>
+          <Text>{index + 1}. {standing.Constructor.name}</Text>
+          <Text>Points: {standing.points}</Text>
+          <Text>Wins: {standing.wins}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+```
+
+### Parameters
+
+<ParamField path="year" type="string" default="current">
+  The season year to fetch standings for. Defaults to `"current"` for the current season.
+  
+  Examples: `"2024"`, `"2023"`, `"current"`
+</ParamField>
+
+### Return Value
+
+Returns a React Query `UseQueryResult` object with:
+
+<ResponseField name="data" type="ConstructorStanding[]">
+  Array of constructor standings from the Jolpica API
+  
+  ```typescript
+  type ConstructorStanding = {
+    position: string;
+    positionText: string;
+    points: string;
+    wins: string;
+    Constructor: {
+      constructorId: string;
+      name: string;
+      nationality: string;
+    };
+  };
+  ```
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  Loading state
+</ResponseField>
+
+<ResponseField name="error" type="Error | null">
+  Error object if the query failed
+</ResponseField>
+
+<ResponseField name="refetch" type="() => void">
+  Function to manually refetch the data
+</ResponseField>
+
+### Implementation Details
+
+- Query key: `["constructorStandings", year]`
+- Uses `jolpicaApi.getConstructorStandings()` to fetch data
+- Always enabled (no conditional fetching)
+- Defaults to current season when no year is provided
+
+## React Query Integration
+
+Both hooks use `@tanstack/react-query` for data fetching and caching:
+
+- Automatic caching based on query keys (different years are cached separately)
+- Background refetching when data becomes stale
+- Deduplication of requests for the same query key
+- Automatic error retry logic
+
+## Year Parameter
+
+Both hooks accept a year parameter:
+
+```typescript
+// Current season (default)
+const current = useDriverStandings();
+const currentAlt = useDriverStandings("current");
+
+// Specific historical seasons
+const season2023 = useDriverStandings("2023");
+const season2020 = useDriverStandings("2020");
+```
+
+The `"current"` value always fetches the most recent season standings.

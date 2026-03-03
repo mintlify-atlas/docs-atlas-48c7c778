@@ -1,0 +1,462 @@
+---
+title: Bingo Components
+description: Components for the interactive bingo board and canvas editor
+---
+
+The bingo feature is the centerpiece of Season Journal, allowing users to create and customize their F1 race bingo boards with drawings, text, and images.
+
+## BingoGrid
+
+The main container component that orchestrates the bingo board layout and interaction.
+
+### Usage
+
+```tsx components/bingo/bingo-grid.tsx
+import BingoGrid from '@/components/bingo/bingo-grid';
+
+<BingoGrid />
+```
+
+### Implementation Details
+
+The `BingoGrid` component manages:
+- 4x4 grid layout of bingo cells
+- Cell selection and editing states
+- Modal canvas editor for cell customization
+- Integration with `useBingoState()` hook
+
+```tsx
+const COLS = 4;
+
+export default function BingoGrid() {
+  const { cells, checkedCount, total, toggleCheck, editCell } = useBingoState();
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [canvasCellIndex, setCanvasCellIndex] = useState<number | null>(null);
+
+  // Layout cells into rows
+  const rows = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < cells.length; i += COLS) {
+      result.push(cells.slice(i, i + COLS));
+    }
+    return result;
+  }, [cells]);
+
+  return (
+    <>
+      <BingoProgressBar checked={checkedCount} total={total} />
+      <View style={{ backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 20, padding: 8 }}>
+        {rows.map((row, rowIdx) => (
+          <View key={rowIdx} className="flex-row">
+            {row.map((cell, colIdx) => (
+              <BingoCell
+                key={index}
+                cell={cell}
+                index={index}
+                isEditing={editingIndex === index}
+                onPress={handlePress}
+                onLongPress={handleLongPress}
+                onEditPress={handleEditPress}
+              />
+            ))}
+          </View>
+        ))}
+      </View>
+      <CanvasEditorModal
+        visible={canvasCellIndex !== null}
+        initialState={canvasCellIndex !== null ? cells[canvasCellIndex].canvasState : null}
+        onSave={handleCanvasSave}
+        onCancel={handleCanvasCancel}
+      />
+    </>
+  );
+}
+```
+
+## BingoCell
+
+Individual interactive cell within the bingo grid.
+
+### Props
+
+<ParamField path="cell" type="BingoCellType" required>
+  Cell data including checked state, image URI, and canvas state
+</ParamField>
+
+<ParamField path="index" type="number" required>
+  Position index of the cell in the grid (0-15)
+</ParamField>
+
+<ParamField path="isEditing" type="boolean" required>
+  Whether the cell is currently in edit mode
+</ParamField>
+
+<ParamField path="onPress" type="(index: number) => void" required>
+  Handler for tap - toggles cell checked state
+</ParamField>
+
+<ParamField path="onLongPress" type="(index: number) => void" required>
+  Handler for long press - enters edit mode (400ms delay)
+</ParamField>
+
+<ParamField path="onEditPress" type="(index: number) => void" required>
+  Handler for edit button press - opens canvas editor
+</ParamField>
+
+### Visual States
+
+```tsx components/bingo/bingo-cell.tsx
+const backgroundColor = cell.checked ? Colors.accent : Colors.surfaceSolid;
+
+return (
+  <Pressable
+    onPress={handlePress}
+    onLongPress={handleLongPress}
+    delayLongPress={400}
+    style={{
+      flex: 1,
+      aspectRatio: 1,
+      margin: 4,
+      borderRadius: 16,
+      backgroundColor,
+      borderWidth: 1,
+      borderColor: cell.checked ? Colors.accent : Colors.border,
+      shadowOpacity: cell.checked ? 0.12 : 0.04,
+      shadowRadius: 8,
+      elevation: cell.checked ? 4 : 1,
+    }}
+  >
+    {/* Image layer */}
+    {cell.imageUri ? (
+      <Image source={{ uri: cell.imageUri }} style={{ position: 'absolute' }} />
+    ) : null}
+
+    {/* Checked overlay */}
+    {cell.checked ? (
+      <View style={{ backgroundColor: 'rgba(250,188,5,0.45)' }} />
+    ) : null}
+
+    {/* Check mark indicator */}
+    {cell.checked ? (
+      <View style={{ position: 'absolute', top: 6, right: 6 }}>
+        <Check color={Colors.white} size={13} />
+      </View>
+    ) : null}
+
+    {/* Edit mode overlay */}
+    {isEditing ? (
+      <Pressable onPress={handleEditPress} style={{ backgroundColor: Colors.accentSoft }}>
+        <Pencil color={Colors.accent} size={28} />
+      </Pressable>
+    ) : null}
+  </Pressable>
+);
+```
+
+## BingoProgressBar
+
+Displays visual progress of checked cells.
+
+### Props
+
+<ParamField path="checked" type="number" required>
+  Number of checked cells
+</ParamField>
+
+<ParamField path="total" type="number" required>
+  Total number of cells (typically 16)
+</ParamField>
+
+### Example
+
+```tsx components/bingo/bingo-progress-bar.tsx
+function BingoProgressBar({ checked, total }: Props) {
+  const pct = total > 0 ? (checked / total) * 100 : 0;
+
+  return (
+    <View style={{ marginBottom: 20 }}>
+      <View className="flex-row items-center justify-between" style={{ marginBottom: 8 }}>
+        <Text style={{ fontFamily: Fonts.displayMedium, fontSize: 15 }}>
+          Progress
+        </Text>
+        <Text style={{ fontFamily: Fonts.bodySemiBold, fontSize: 14 }}>
+          {checked} / {total}
+        </Text>
+      </View>
+
+      <View style={{ height: 10, borderRadius: 5, backgroundColor: Colors.accentSoft }}>
+        <View
+          style={{
+            height: '100%',
+            width: `${pct}%`,
+            borderRadius: 5,
+            backgroundColor: Colors.accent,
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+```
+
+## CanvasEditorModal
+
+Full-screen modal for editing individual bingo cells with drawing, text, and images.
+
+### Props
+
+<ParamField path="visible" type="boolean" required>
+  Controls modal visibility
+</ParamField>
+
+<ParamField path="initialState" type="CanvasState | null" required>
+  Previous canvas state to restore when editing existing cell
+</ParamField>
+
+<ParamField path="onSave" type="(uri: string, canvasState: CanvasState) => void" required>
+  Called when user saves the canvas - receives screenshot URI and state
+</ParamField>
+
+<ParamField path="onCancel" type="() => void" required>
+  Called when user cancels editing
+</ParamField>
+
+### Features
+
+<AccordionGroup>
+  <Accordion title="Drawing Tool">
+    Free-hand drawing with adjustable stroke width and color selection.
+    
+    ```tsx
+    <DrawingLayer
+      paths={[]}
+      color={editor.selectedColor}
+      strokeWidth={editor.selectedStrokeWidth}
+      isActive={editor.activeTool === 'draw'}
+      onPathComplete={editor.addPath}
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="Text Tool">
+    Add draggable, scalable text with custom colors.
+    
+    ```tsx
+    editor.addText(
+      textInput.trim(),
+      editor.selectedColor,
+      CANVAS_SIZE * 0.2,
+      CANVAS_SIZE * 0.4
+    );
+    ```
+  </Accordion>
+
+  <Accordion title="Image Tool">
+    Import images from device gallery with resize and positioning.
+    
+    ```tsx
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsEditing: false,
+    });
+    
+    editor.addImage(asset.uri, x, y, width, height);
+    ```
+  </Accordion>
+
+  <Accordion title="Eyedropper Tool">
+    Pick colors from existing canvas content.
+    
+    ```tsx
+    const uri = await captureRef(viewShotRef.current, {
+      format: 'png',
+      quality: 1,
+      result: 'base64',
+    });
+    
+    <EyedropperLayer
+      base64Uri={`data:image/png;base64,${eyedropperUri}`}
+      width={CANVAS_SIZE}
+      height={CANVAS_SIZE}
+      onColorPicked={handleColorPicked}
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="Hand Tool">
+    Move and scale text/images with drag and pinch gestures.
+    
+    ```tsx
+    const isHandActive = editor.activeTool === 'hand';
+    
+    <DraggableText
+      item={textItem}
+      isHandActive={isHandActive}
+      onUpdate={editor.updateText}
+    />
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Canvas Types
+
+The canvas state is defined in `canvas-types.ts`:
+
+```tsx components/bingo/canvas/canvas-types.ts
+export type DrawPath = {
+  id: string;
+  path: string;
+  color: string;
+  strokeWidth: number;
+};
+
+export type CanvasText = {
+  id: string;
+  text: string;
+  color: string;
+  x: number;
+  y: number;
+  scale: number;
+};
+
+export type CanvasImage = {
+  id: string;
+  uri: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type CanvasState = {
+  paths: DrawPath[];
+  texts: CanvasText[];
+  images: CanvasImage[];
+  zOrder: string[];  // Layer ordering for overlapping elements
+  selectedColor: string;
+  selectedStrokeWidth: number;
+  recentColors: string[];
+};
+
+export type ToolMode = 'draw' | 'text' | 'image' | 'hand' | 'pipette' | null;
+```
+
+## Canvas Sub-Components
+
+### DraggableText
+
+Handles text element dragging, scaling, and positioning using `PanResponder`.
+
+**Key Features:**
+- Single-finger drag to move
+- Two-finger pinch to scale (0.5x to 4x)
+- Drag-to-trash gesture support
+- Animated transforms for smooth interaction
+
+```tsx components/bingo/canvas/draggable-text.tsx
+<Animated.View
+  {...(isHandActive ? movePanResponder.panHandlers : {})}
+  pointerEvents={isHandActive ? 'auto' : 'none'}
+  style={{
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    transform: [
+      { translateX: pan.x },
+      { translateY: pan.y },
+      { scale: scaleAnim },
+    ],
+  }}
+>
+  <Text style={{ color: item.color, fontSize: 16 }}>
+    {item.text}
+  </Text>
+</Animated.View>
+```
+
+### DraggableImage
+
+Similar to `DraggableText` but handles image resizing instead of scaling.
+
+**Key Features:**
+- Drag to reposition
+- Pinch to resize (maintains aspect ratio)
+- Minimum size constraint (30px)
+
+```tsx components/bingo/canvas/draggable-image.tsx
+<Animated.Image
+  source={{ uri: item.uri }}
+  style={{
+    width: sizeAnim.width,
+    height: sizeAnim.height,
+    borderRadius: 6,
+  }}
+  resizeMode="cover"
+/>
+```
+
+### DrawingLayer
+
+Captures touch input and renders SVG paths for free-hand drawing.
+
+```tsx components/bingo/canvas/drawing-layer.tsx
+const panResponder = PanResponder.create({
+  onPanResponderGrant: (evt) => {
+    const { locationX, locationY } = evt.nativeEvent;
+    const d = `M${locationX},${locationY}`;
+    pathRef.current = d;
+  },
+  onPanResponderMove: (evt) => {
+    const { locationX, locationY } = evt.nativeEvent;
+    pathRef.current += ` L${locationX},${locationY}`;
+  },
+  onPanResponderRelease: () => {
+    onPathComplete(pathRef.current, color, strokeWidth);
+  },
+});
+```
+
+### CanvasToolbar
+
+Toolbar for switching between canvas tools and selecting colors/stroke widths.
+
+**Props:**
+- `activeTool`: Current tool mode
+- `selectedColor`: Current drawing/text color
+- `recentColors`: Array of recently used colors
+- `selectedStrokeWidth`: Current brush size (3, 6, or 12)
+- `onToolChange`: Tool selection handler
+- `onColorChange`: Color selection handler
+- `onStrokeWidthChange`: Stroke width selection handler
+- `onImagePick`: Image picker handler
+- `onCustomColorPress`: Opens custom color picker
+
+<Note>
+  All canvas components use `memo()` for performance optimization and `useRef` to avoid prop drilling and re-render issues.
+</Note>
+
+## Screenshot Capture
+
+The canvas is captured using `react-native-view-shot`:
+
+```tsx
+import ViewShot, { captureRef } from 'react-native-view-shot';
+
+const viewShotRef = useRef<ViewShot>(null);
+
+const handleSave = async () => {
+  if (viewShotRef.current?.capture) {
+    const uri = await viewShotRef.current.capture();
+    const state = editor.getState();
+    onSave(uri, state);
+  }
+};
+
+<ViewShot
+  ref={viewShotRef}
+  options={{ format: 'png', quality: 1, result: 'tmpfile' }}
+>
+  {/* Canvas content */}
+</ViewShot>
+```

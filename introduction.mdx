@@ -1,0 +1,127 @@
+---
+title: Introduction
+description: A beautiful, functional, and deeply personalized Formula 1 companion app for tracking the racing season
+---
+
+<img
+  className="block"
+  src="/images/hero-light.svg"
+  alt="Season Journal Hero"
+/>
+
+## Welcome to Season Journal
+
+Season Journal brings the thrill of the grid to your fingertips. Built with React Native and Expo, this cross-platform mobile app is your ultimate Formula 1 companion for the racing season.
+
+Whether you're making race predictions, tracking championship standings, or keeping tabs on your favorite drivers and teams, Season Journal delivers a polished, personalized experience on iOS, Android, and web.
+
+## Core features
+
+<CardGroup cols={3}>
+  <Card title="Race predictions bingo" icon="grid-2-plus" href="#race-predictions-bingo">
+    Interactive bingo board for making and tracking your race weekend predictions
+  </Card>
+  <Card title="Championship tracking" icon="trophy" href="#championship-tracking">
+    Real-time standings for both drivers and constructors championships
+  </Card>
+  <Card title="Favorites" icon="star" href="#favorites">
+    Curate your personal F1 experience by saving drivers and teams
+  </Card>
+</CardGroup>
+
+### Race predictions bingo
+
+Create custom bingo cards for each race weekend with an interactive 4x4 grid. The built-in canvas editor lets you customize each cell with text, images, drawings, and colors. Track your predictions throughout the race and mark them as they come true.
+
+**Key capabilities:**
+- 16-cell customizable bingo grid
+- Rich canvas editor with text, images, and drawing tools
+- Color picker with eyedropper tool
+- Progress tracking with visual indicators
+- Long-press to edit any cell
+
+### Championship tracking
+
+Stay up to date with the pulse of the season. View current standings for both the World Drivers' Championship and the Constructors' Championship with real-time data from the Jolpica API.
+
+**Features:**
+- Live driver standings with points and positions
+- Constructor team standings
+- Material top tabs for easy navigation
+- Elegant, responsive design
+
+### Favorites
+
+Save your favorite drivers and teams to quickly access their stats and information. The favorites system lets you personalize your F1 tracking experience.
+
+**What you can do:**
+- Select and save favorite drivers
+- Track favorite constructor teams
+- Quick access to detailed stats
+- Dedicated tabs for drivers and teams
+
+## Tech stack
+
+Season Journal is built with modern React Native best practices, emphasizing modularity, performance, and type safety.
+
+<CardGroup cols={2}>
+  <Card title="React Native" icon="react">
+    Cross-platform mobile framework with Expo SDK 54
+  </Card>
+  <Card title="TypeScript" icon="code">
+    Full type safety throughout the application
+  </Card>
+  <Card title="NativeWind" icon="wind">
+    Tailwind CSS for React Native styling
+  </Card>
+  <Card title="Expo Router" icon="route">
+    File-based navigation and routing
+  </Card>
+</CardGroup>
+
+### Full technology stack
+
+- **Framework:** React Native with Expo SDK 54
+- **Language:** TypeScript for type safety
+- **Routing:** Expo Router with file-based navigation
+- **Styling:** NativeWind (Tailwind CSS for React Native)
+- **State Management:** TanStack React Query for server state
+- **Animations:** React Native Reanimated
+- **Icons:** Lucide React Native
+- **Fonts:** Inter and Nunito via Expo Google Fonts
+- **API:** Jolpica F1 API for live race data
+
+## Project architecture
+
+The app follows a clean, modular structure:
+
+```text
+season-journal/
+├── app/             # Expo Router file-based routing
+│   └── (tabs)/      # Bottom tab navigation
+├── components/      # Reusable UI components
+│   ├── bingo/       # Bingo grid and canvas editor
+│   ├── screens/     # Screen-level components
+│   └── ui/          # Generic atomic UI components
+├── hooks/           # Custom React hooks and queries
+├── constants/       # Theme colors and fonts
+├── services/        # API integrations
+└── assets/          # Static assets
+```
+
+<Note>
+  Season Journal uses Expo's New Architecture for improved performance and React Compiler for optimization.
+</Note>
+
+## What's next?
+
+Ready to get started? Here's your roadmap:
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Set up your development environment and install dependencies
+  </Card>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Get the app running and explore the main features
+  </Card>
+</CardGroup>

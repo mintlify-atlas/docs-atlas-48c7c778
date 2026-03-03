@@ -1,0 +1,141 @@
+---
+title: Race predictions bingo
+description: Create and track race predictions with an interactive 4x4 bingo grid
+---
+
+The race predictions bingo feature allows users to create personalized predictions for Formula 1 races using a 4x4 grid. Each cell can be edited with custom drawings, text, and images, then marked as checked when the prediction comes true during the race.
+
+## Grid structure
+
+The bingo grid consists of 16 cells arranged in a 4x4 layout. Each cell maintains three pieces of state:
+
+- **Checked status**: Whether the prediction has occurred
+- **Image URI**: The rendered canvas image for the cell
+- **Canvas state**: The full editing state including paths, texts, and images
+
+```typescript
+export type BingoCell = {
+  checked: boolean;
+  imageUri: string | null;
+  canvasState: CanvasState | null;
+};
+```
+
+## State management
+
+The `useBingoState` hook manages the grid state and provides methods to interact with cells:
+
+```typescript
+const { cells, checkedCount, total, toggleCheck, editCell } = useBingoState();
+```
+
+### Available methods
+
+<ParamField path="toggleCheck" type="function">
+  Toggles the checked state of a cell at the given index
+</ParamField>
+
+<ParamField path="editCell" type="function">
+  Updates a cell with a new image URI and canvas state after editing
+</ParamField>
+
+<ParamField path="checkedCount" type="number">
+  The number of cells currently marked as checked
+</ParamField>
+
+## User interactions
+
+### Checking predictions
+
+Users can tap any cell to toggle its checked state. When checked, the cell displays:
+- A yellow overlay (rgba(250,188,5,0.45))
+- A check icon in the top-right corner
+- Enhanced shadow and elevation
+
+```tsx components/bingo/bingo-cell.tsx
+const handlePress = useCallback(() => {
+  onPress(index);
+}, [onPress, index]);
+
+const backgroundColor = cell.checked ? Colors.accent : Colors.surfaceSolid;
+```
+
+### Editing cells
+
+Long-pressing a cell (400ms delay) enters edit mode, displaying a pencil icon overlay. Tapping the overlay opens the canvas editor modal.
+
+```tsx components/bingo/bingo-grid.tsx
+const handleLongPress = useCallback((index: number) => {
+  setEditingIndex(index);
+}, []);
+
+const handleEditPress = useCallback((index: number) => {
+  setEditingIndex(null);
+  setCanvasCellIndex(index);
+}, []);
+```
+
+## Progress tracking
+
+The `BingoProgressBar` component displays progress above the grid:
+
+```tsx components/bingo/bingo-progress-bar.tsx
+function BingoProgressBar({ checked, total }: Props) {
+  const pct = total > 0 ? (checked / total) * 100 : 0;
+  
+  return (
+    <View style={{ marginBottom: 20 }}>
+      <View className="flex-row items-center justify-between">
+        <Text>Progress</Text>
+        <Text>{checked} / {total}</Text>
+      </View>
+      <View style={{ height: 10, borderRadius: 5, backgroundColor: Colors.accentSoft }}>
+        <View style={{ height: '100%', width: `${pct}%`, backgroundColor: Colors.accent }} />
+      </View>
+    </View>
+  );
+}
+```
+
+<Info>
+The progress bar automatically updates as users check or uncheck predictions during the race.
+</Info>
+
+## Grid rendering
+
+The grid divides cells into rows of 4 using a simple slicing algorithm:
+
+```tsx components/bingo/bingo-grid.tsx
+const COLS = 4;
+
+const rows = useMemo(() => {
+  const result: (typeof cells)[] = [];
+  for (let i = 0; i < cells.length; i += COLS) {
+    result.push(cells.slice(i, i + COLS));
+  }
+  return result;
+}, [cells]);
+```
+
+## Canvas integration
+
+When a cell is opened for editing, the `CanvasEditorModal` receives the current canvas state:
+
+```tsx components/bingo/bingo-grid.tsx
+<CanvasEditorModal
+  visible={canvasCellIndex !== null}
+  initialState={
+    canvasCellIndex !== null
+      ? cells[canvasCellIndex].canvasState
+      : null
+  }
+  onSave={handleCanvasSave}
+  onCancel={handleCanvasCancel}
+/>
+```
+
+After editing, the saved image URI and canvas state are stored in the cell for future re-editing.
+
+<Check>
+All canvas editing state is preserved, allowing users to return and modify their predictions at any time.
+</Check>

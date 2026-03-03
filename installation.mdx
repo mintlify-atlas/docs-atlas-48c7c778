@@ -1,0 +1,240 @@
+---
+title: Installation
+description: Set up Season Journal on your local machine and start developing
+---
+
+## Prerequisites
+
+Before installing Season Journal, ensure you have the following tools installed on your system:
+
+<CardGroup cols={3}>
+  <Card title="Node.js" icon="node-js">
+    Version 18 or newer recommended
+  </Card>
+  <Card title="pnpm" icon="box">
+    Fast, disk space efficient package manager
+  </Card>
+  <Card title="Expo Go" icon="mobile">
+    Mobile app for testing on physical devices
+  </Card>
+</CardGroup>
+
+<Note>
+  While this guide uses pnpm, you can also use npm or yarn if you prefer.
+</Note>
+
+### Install Node.js
+
+Download and install Node.js from [nodejs.org](https://nodejs.org/). Verify your installation:
+
+```bash
+node --version
+# Should output v18.0.0 or higher
+```
+
+### Install pnpm
+
+Install pnpm globally using npm:
+
+```bash
+npm install -g pnpm
+```
+
+Verify the installation:
+
+```bash
+pnpm --version
+```
+
+### Install Expo Go
+
+Download Expo Go on your mobile device:
+
+- **iOS:** [App Store](https://apps.apple.com/app/expo-go/id982107779)
+- **Android:** [Google Play](https://play.google.com/store/apps/details?id=host.exp.exponent)
+
+Alternatively, you can use iOS Simulator (macOS only) or Android Emulator.
+
+## Installation steps
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the Season Journal repository from GitHub:
+
+    ```bash
+    git clone https://github.com/redotomi/season-journal.git
+    cd season-journal
+    ```
+
+    This creates a local copy of the project in the `season-journal` directory.
+  </Step>
+
+  <Step title="Install dependencies">
+    Install all required npm packages using your preferred package manager:
+
+    <CodeGroup>
+      ```bash pnpm
+      pnpm install
+      ```
+
+      ```bash npm
+      npm install
+      ```
+
+      ```bash yarn
+      yarn install
+      ```
+    </CodeGroup>
+
+    This installs all dependencies listed in `package.json`, including:
+    - React Native and Expo SDK 54
+    - TypeScript and type definitions
+    - NativeWind for styling
+    - TanStack React Query for data fetching
+    - Navigation libraries
+    - UI and animation libraries
+
+    <Info>
+      The initial install may take a few minutes as it downloads all dependencies.
+    </Info>
+  </Step>
+
+  <Step title="Start the development server">
+    Launch the Expo development server:
+
+    <CodeGroup>
+      ```bash pnpm
+      pnpm start
+      ```
+
+      ```bash npm
+      npm start
+      ```
+
+      ```bash yarn
+      yarn start
+      ```
+    </CodeGroup>
+
+    This starts the Metro bundler and displays a QR code in your terminal. You should see output similar to:
+
+    ```
+    Metro waiting on exp://192.168.1.x:8081
+    › Scan the QR code above with Expo Go (Android) or the Camera app (iOS)
+    ```
+  </Step>
+
+  <Step title="Open on your device">
+    Choose how you want to run the app:
+
+    **On a physical device:**
+    - Open Expo Go on your mobile device
+    - Scan the QR code displayed in your terminal
+    - Wait for the app to build and load
+
+    **On iOS Simulator (macOS only):**
+    ```bash
+    pnpm run ios
+    ```
+
+    **On Android Emulator:**
+    ```bash
+    pnpm run android
+    ```
+
+    **On web browser:**
+    ```bash
+    pnpm run web
+    ```
+
+    <Warning>
+      Make sure your computer and mobile device are on the same Wi-Fi network when using Expo Go.
+    </Warning>
+  </Step>
+</Steps>
+
+## Verify installation
+
+Once the app loads, you should see the Season Journal home screen with:
+
+- A "Bingo Card" header at the top
+- An empty 4x4 bingo grid
+- A progress bar showing 0/16 cells checked
+- Bottom tab navigation with three tabs: Bingo, Tracking, and Favourites
+
+<Info>
+  The app uses Expo's New Architecture, which is enabled by default in `app.json` with `"newArchEnabled": true`.
+</Info>
+
+## Available scripts
+
+The following npm scripts are available in `package.json`:
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| Start | `pnpm start` | Starts the Expo development server |
+| iOS | `pnpm run ios` | Opens the app in iOS Simulator |
+| Android | `pnpm run android` | Opens the app in Android Emulator |
+| Web | `pnpm run web` | Opens the app in a web browser |
+| Lint | `pnpm run lint` | Runs ESLint to check code quality |
+| Reset | `pnpm run reset-project` | Resets the project to a clean slate |
+
+## Troubleshooting
+
+### Port already in use
+
+If you see an error about port 8081 being in use:
+
+```bash
+# Kill the process using port 8081
+npx kill-port 8081
+
+# Then start again
+pnpm start
+```
+
+### Metro bundler issues
+
+If you encounter Metro bundler errors, try clearing the cache:
+
+```bash
+pnpm start --clear
+```
+
+### Dependency issues
+
+If you have issues with dependencies:
+
+<CodeGroup>
+  ```bash pnpm
+  # Remove node_modules and reinstall
+  rm -rf node_modules
+  pnpm install
+  ```
+
+  ```bash npm
+  # Remove node_modules and reinstall
+  rm -rf node_modules
+  npm install
+  ```
+</CodeGroup>
+
+### iOS Simulator not opening
+
+Make sure Xcode and Command Line Tools are installed:
+
+```bash
+xcode-select --install
+```
+
+### Android Emulator not connecting
+
+Ensure Android Studio and an Android Virtual Device (AVD) are properly set up. See the [Expo documentation](https://docs.expo.dev/workflow/android-studio-emulator/) for detailed instructions.
+
+## Next steps
+
+Now that you have Season Journal installed, you're ready to explore the app:
+
+<Card title="Quick start guide" icon="rocket" href="/quickstart">
+  Learn how to use the bingo card, track championships, and manage your favorites
+</Card>

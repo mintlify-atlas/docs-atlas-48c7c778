@@ -1,0 +1,108 @@
+---
+title: 'Driver'
+description: 'Driver interface for Formula 1 driver information'
+---
+
+## Overview
+
+The `Driver` interface represents a Formula 1 driver with biographical information and identifiers from the Jolpica F1 API.
+
+## Interface Definition
+
+```typescript
+export interface Driver {
+  driverId: string;
+  permanentNumber: string;
+  code: string;
+  url: string;
+  givenName: string;
+  familyName: string;
+  dateOfBirth: string;
+  nationality: string;
+}
+```
+
+## Properties
+
+<ResponseField name="driverId" type="string" required>
+  Unique identifier for the driver (e.g., "hamilton", "verstappen")
+</ResponseField>
+
+<ResponseField name="permanentNumber" type="string" required>
+  Driver's permanent racing number (e.g., "44", "33")
+</ResponseField>
+
+<ResponseField name="code" type="string" required>
+  Three-letter driver code displayed on timing screens (e.g., "HAM", "VER")
+</ResponseField>
+
+<ResponseField name="url" type="string" required>
+  Wikipedia URL for the driver with additional biographical information
+</ResponseField>
+
+<ResponseField name="givenName" type="string" required>
+  Driver's first name (e.g., "Lewis", "Max")
+</ResponseField>
+
+<ResponseField name="familyName" type="string" required>
+  Driver's last name (e.g., "Hamilton", "Verstappen")
+</ResponseField>
+
+<ResponseField name="dateOfBirth" type="string" required>
+  ISO 8601 date string of the driver's birth date (e.g., "1985-01-07")
+</ResponseField>
+
+<ResponseField name="nationality" type="string" required>
+  Driver's nationality (e.g., "British", "Dutch")
+</ResponseField>
+
+## Usage
+
+The `Driver` interface is used throughout the application in several contexts:
+
+### Driver Standings
+
+Each `DriverStanding` contains a `Driver` object:
+
+```typescript
+interface DriverStanding {
+  position: string;
+  positionText: string;
+  points: string;
+  wins: string;
+  Driver: Driver;
+  Constructors: Constructor[];
+}
+```
+
+### Favorites System
+
+Drivers can be marked as favorites and stored in local preferences.
+
+### API Fetching
+
+The Jolpica API service provides a method to fetch individual driver data:
+
+```typescript
+const driver = await jolpicaApi.getDriver("hamilton");
+```
+
+## Example Data
+
+```json
+{
+  "driverId": "hamilton",
+  "permanentNumber": "44",
+  "code": "HAM",
+  "url": "http://en.wikipedia.org/wiki/Lewis_Hamilton",
+  "givenName": "Lewis",
+  "familyName": "Hamilton",
+  "dateOfBirth": "1985-01-07",
+  "nationality": "British"
+}
+```
+
+## Related Types
+
+- [Constructor](/api/constructor) - Constructor/team interface
+- [Data Models](/api/types) - Overview of all data models

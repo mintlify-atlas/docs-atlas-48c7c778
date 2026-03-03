@@ -1,0 +1,329 @@
+---
+title: Canvas editor
+description: Rich drawing and editing tools for creating custom bingo predictions
+---
+
+The canvas editor provides a full-featured drawing interface for customizing bingo cells. Users can draw freehand, add text, insert images, and use advanced tools like color picking and layering.
+
+## Tool modes
+
+The editor supports five tool modes defined in `canvas-types.ts`:
+
+```typescript canvas-types.ts
+export type ToolMode = "draw" | "text" | "image" | "hand" | "pipette" | null;
+```
+
+<CardGroup cols={2}>
+  <Card title="Draw" icon="paintbrush">
+    Freehand drawing with customizable color and stroke width
+  </Card>
+  <Card title="Text" icon="font">
+    Add draggable text elements with color selection
+  </Card>
+  <Card title="Image" icon="image">
+    Insert and position images from the device library
+  </Card>
+  <Card title="Hand" icon="hand">
+    Drag and reposition text and image elements
+  </Card>
+  <Card title="Pipette" icon="eyedropper">
+    Pick colors from the canvas using an eyedropper tool
+  </Card>
+</CardGroup>
+
+## Canvas state
+
+The canvas maintains a comprehensive state structure:
+
+```typescript canvas-types.ts
+export type CanvasState = {
+  paths: DrawPath[];
+  texts: CanvasText[];
+  images: CanvasImage[];
+  zOrder: string[];
+  selectedColor: string;
+  selectedStrokeWidth: number;
+  recentColors: string[];
+};
+```
+
+### Element types
+
+<Tabs>
+  <Tab title="Draw paths">
+    ```typescript
+    export type DrawPath = {
+      id: string;
+      path: string;
+      color: string;
+      strokeWidth: number;
+    };
+    ```
+    SVG path data created from touch gestures
+  </Tab>
+  <Tab title="Text elements">
+    ```typescript
+    export type CanvasText = {
+      id: string;
+      text: string;
+      color: string;
+      x: number;
+      y: number;
+      scale: number;
+    };
+    ```
+    Draggable text with position and scale
+  </Tab>
+  <Tab title="Images">
+    ```typescript
+    export type CanvasImage = {
+      id: string;
+      uri: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
+    ```
+    Positioned images with dimensions
+  </Tab>
+</Tabs>
+
+## useCanvasEditor hook
+
+The `useCanvasEditor` hook manages all canvas state and operations:
+
+```typescript hooks/use-canvas-editor.ts
+export function useCanvasEditor() {
+  const [paths, setPaths] = useState<DrawPath[]>([]);
+  const [texts, setTexts] = useState<CanvasText[]>([]);
+  const [images, setImages] = useState<CanvasImage[]>([]);
+  const [zOrder, setZOrder] = useState<string[]>([]);
+  const [undoStack, setUndoStack] = useState<CanvasAction[]>([]);
+  const [activeTool, setActiveTool] = useState<ToolMode>("draw");
+  const [selectedColor, setSelectedColorState] = useState<string>(CANVAS_COLORS[0]);
+  const [selectedStrokeWidth, setSelectedStrokeWidth] = useState<number>(3);
+  
+  // ... methods
+}
+```
+
+### Key methods
+
+<ParamField path="addPath" type="(pathData: string, color: string, strokeWidth: number) => void">
+  Adds a new drawing path to the canvas
+</ParamField>
+
+<ParamField path="addText" type="(text: string, color: string, x: number, y: number) => void">
+  Adds a text element at the specified position
+</ParamField>
+
+<ParamField path="addImage" type="(uri: string, x: number, y: number, width: number, height: number) => void">
+  Adds an image element with dimensions
+</ParamField>
+
+<ParamField path="bringToFront" type="(id: string) => void">
+  Moves an element to the top of the z-order stack
+</ParamField>
+
+<ParamField path="undo" type="() => void">
+  Removes the most recently added element
+</ParamField>
+
+## Color management
+
+The editor includes a sophisticated color system with preset colors and a full color picker:
+
+```typescript canvas-types.ts
+export const CANVAS_COLORS = [
+  "#1C1C2E",
+  "#E53935",
+  "#1E88E5",
+  "#43A047",
+  "#FABC05",
+  "#FFFFFF",
+] as const;
+```
+
+### Color picker integration
+
+The editor uses `reanimated-color-picker` for advanced color selection:
+
+```tsx canvas-editor-modal.tsx
+<ColorPicker
+  value={editor.selectedColor}
+  onComplete={(colors) => {
+    "worklet";
+    runOnJS(editor.setSelectedColor)(colors.hex);
+  }}
+>
+  <Preview style={{ height: 40, borderRadius: 12 }} />
+  <Panel1 style={{ borderRadius: 16 }} />
+  <HueSlider style={{ borderRadius: 12 }} thumbShape="circle" />
+  <Swatches colors={CANVAS_COLORS} />
+</ColorPicker>
+```
+
+### Recent colors
+
+The editor automatically tracks recently used colors:
+
+```typescript use-canvas-editor.ts
+const setSelectedColor = useCallback((color: string) => {
+  setSelectedColorState(color);
+  setRecentColors((prev) => {
+    if (prev.includes(color)) return prev;
+    const newColors = [color, ...prev];
+    if (newColors.length > 6) newColors.pop();
+    return newColors;
+  });
+}, []);
+```
+
+## Eyedropper tool
+
+The pipette/eyedropper tool captures the canvas and allows color picking:
+
+```tsx canvas-editor-modal.tsx
+const handleToolChange = useCallback(
+  async (tool: ToolMode) => {
+    if (tool === "pipette") {
+      if (viewShotRef.current) {
+        try {
+          const uri = await captureRef(viewShotRef.current, {
+            format: "png",
+            quality: 1,
+            result: "base64",
+          });
+          setEyedropperUri(uri);
+        } catch (e) {}
+      }
+    }
+    editor.setActiveTool(tool);
+  },
+  [editor]
+);
+```
+
+When activated, the `EyedropperLayer` component overlays the canvas with a touch-interactive color picker.
+
+<Info>
+The eyedropper uses ViewShot to capture a base64 snapshot of the canvas, which is then analyzed for color picking.
+</Info>
+
+## Drag and drop
+
+Text and image elements can be dragged using React Native Gesture Handler:
+
+### Drag to delete
+
+When dragging, a trash zone appears at the bottom of the screen. Dropping an element on the trash deletes it:
+
+```tsx canvas-editor-modal.tsx
+const handleDragEnd = useCallback(
+  (id: string, type: "text" | "image", pageY: number) => {
+    setIsDragging(false);
+    const { y, height } = trashLayoutRef.current;
+    if (y > 0 && pageY >= y && pageY <= y + height) {
+      if (type === "text") {
+        editor.removeText(id);
+      } else {
+        editor.removeImage(id);
+      }
+    }
+  },
+  [editor]
+);
+```
+
+### Z-order management
+
+When a drag starts, the element is automatically brought to front:
+
+```typescript use-canvas-editor.ts
+const bringToFront = useCallback((id: string) => {
+  setZOrder((prev) => {
+    const arr = prev.filter((item) => item !== id);
+    arr.push(id);
+    return arr;
+  });
+}, []);
+```
+
+## Undo functionality
+
+The editor maintains an undo stack that tracks all added elements:
+
+```typescript use-canvas-editor.ts
+const undo = useCallback(() => {
+  setUndoStack((prev) => {
+    if (prev.length === 0) return prev;
+    const last = prev[prev.length - 1];
+    const newStack = prev.slice(0, -1);
+
+    switch (last.type) {
+      case "draw":
+        setPaths((p) => p.filter((item) => item.id !== last.id));
+        break;
+      case "text":
+        setTexts((t) => t.filter((item) => item.id !== last.id));
+        break;
+      case "image":
+        setImages((i) => i.filter((item) => item.id !== last.id));
+        break;
+    }
+    setZOrder((z) => z.filter((id) => id !== last.id));
+    return newStack;
+  });
+}, []);
+```
+
+<Warning>
+Undo only removes the most recently added element. Moving or modifying existing elements does not add to the undo stack.
+</Warning>
+
+## Saving and loading
+
+The canvas state can be saved and restored:
+
+```typescript use-canvas-editor.ts
+const getState = useCallback((): CanvasState => {
+  return { 
+    paths, 
+    texts, 
+    images, 
+    zOrder, 
+    selectedColor, 
+    selectedStrokeWidth, 
+    recentColors 
+  };
+}, [paths, texts, images, zOrder, selectedColor, selectedStrokeWidth, recentColors]);
+
+const loadState = useCallback((state: CanvasState | null) => {
+  if (state) {
+    setPaths(state.paths);
+    setTexts(state.texts);
+    setImages(state.images);
+    setZOrder(state.zOrder || []);
+    setSelectedColorState(state?.selectedColor ?? CANVAS_COLORS[0]);
+    setRecentColors(state?.recentColors ?? [...CANVAS_COLORS]);
+  }
+}, []);
+```
+
+When saving, the canvas is captured using ViewShot:
+
+```tsx canvas-editor-modal.tsx
+const handleSave = useCallback(async () => {
+  try {
+    if (viewShotRef.current?.capture) {
+      const uri = await viewShotRef.current.capture();
+      const state = editor.getState();
+      onSave(uri, state);
+      editor.clear();
+    }
+  } catch {
+    Alert.alert("Error", "Failed to save the canvas");
+  }
+}, [onSave, editor]);
+```

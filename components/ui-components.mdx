@@ -1,0 +1,493 @@
+---
+title: UI Components
+description: Reusable UI components and styling patterns
+---
+
+Season Journal uses a combination of custom components, NativeWind utility classes, and platform-specific implementations for a polished user experience.
+
+## IconSymbol
+
+Cross-platform icon component with automatic platform selection.
+
+### Platform Implementations
+
+The app provides two implementations:
+
+<CodeGroup>
+
+```tsx icon-symbol.tsx (Android/Web)
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
+type IconMapping = Record<string, ComponentProps<typeof MaterialIcons>['name']>;
+
+const MAPPING = {
+  'house.fill': 'home',
+  'paperplane.fill': 'send',
+  'chevron.left.forwardslash.chevron.right': 'code',
+  'chevron.right': 'chevron-right',
+} as IconMapping;
+
+export function IconSymbol({ name, size = 24, color, style }) {
+  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+}
+```
+
+```tsx icon-symbol.ios.tsx (iOS)
+import { SymbolView } from 'expo-symbols';
+
+export function IconSymbol({ name, size = 24, color, style, weight = 'regular' }) {
+  return (
+    <SymbolView
+      weight={weight}
+      tintColor={color}
+      resizeMode="scaleAspectFit"
+      name={name}
+      style={[{ width: size, height: size }, style]}
+    />
+  );
+}
+```
+
+</CodeGroup>
+
+### Usage
+
+```tsx
+import { IconSymbol } from '@/components/ui/icon-symbol';
+
+<IconSymbol
+  name="house.fill"
+  size={24}
+  color={Colors.textPrimary}
+/>
+```
+
+<Info>
+  React Native automatically selects the `.ios.tsx` file on iOS and the `.tsx` file on other platforms.
+</Info>
+
+### Props
+
+<ParamField path="name" type="string" required>
+  Icon name - must be in the MAPPING object for Android, or valid SF Symbol for iOS
+</ParamField>
+
+<ParamField path="size" type="number" default={24}>
+  Icon size in pixels
+</ParamField>
+
+<ParamField path="color" type="string | OpaqueColorValue" required>
+  Icon color
+</ParamField>
+
+<ParamField path="style" type="StyleProp<TextStyle>">
+  Additional styles to apply
+</ParamField>
+
+<ParamField path="weight" type="SymbolWeight" default="regular">
+  iOS only - SF Symbol weight (ultraLight, thin, light, regular, medium, semibold, bold, heavy, black)
+</ParamField>
+
+## GlassyTabBar
+
+Custom bottom navigation tab bar with glassmorphic styling.
+
+### Features
+
+- Floating design with shadow and elevation
+- Active state with white background
+- Inactive state with semi-transparent icons
+- Rounded pill shape with even spacing
+- Positioned above screen content
+
+### Implementation
+
+```tsx components/journal-tab-bar.tsx
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+
+export default function GlassyTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const routes = state.routes;
+
+  const tabs = useMemo(
+    () =>
+      routes.map((route) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === routes.indexOf(route);
+
+        return {
+          key: route.key,
+          routeName: route.name,
+          isFocused,
+          icon: options.tabBarIcon,
+        };
+      }),
+    [routes, descriptors, state.index]
+  );
+
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        bottom: 32,
+        left: 40,
+        right: 40,
+        backgroundColor: Colors.dark,
+        borderRadius: 28,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-evenly',
+        paddingVertical: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
+        elevation: 12,
+      }}
+    >
+      {tabs.map((tab) => (
+        <Pressable
+          key={tab.key}
+          onPress={() => handlePress(tab.key, tab.routeName, tab.isFocused)}
+          onLongPress={() => handleLongPress(tab.key)}
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: tab.isFocused ? Colors.white : 'transparent',
+          }}
+        >
+          {tab.icon
+            ? tab.icon({
+                focused: tab.isFocused,
+                color: tab.isFocused ? Colors.dark : 'rgba(255,255,255,0.5)',
+                size: 22,
+              })
+            : null}
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+```
+
+### Usage in Navigation
+
+```tsx
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import GlassyTabBar from '@/components/journal-tab-bar';
+
+const Tab = createBottomTabNavigator();
+
+function TabNavigator() {
+  return (
+    <Tab.Navigator
+      tabBar={(props) => <GlassyTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Bingo" component={BingoScreen} />
+    </Tab.Navigator>
+  );
+}
+```
+
+<Warning>
+  The tab bar uses absolute positioning. Ensure screen content has appropriate padding to avoid overlap.
+</Warning>
+
+## Styling Patterns
+
+### NativeWind Classes
+
+Season Journal uses NativeWind for utility-first styling:
+
+```tsx
+// Flexbox layouts
+<View className="flex-row items-center justify-between">
+  <Text>Left</Text>
+  <Text>Right</Text>
+</View>
+
+// Spacing utilities
+<View className="px-5 py-4">
+  <Text>Content</Text>
+</View>
+
+// Positioning
+<View className="absolute bottom-0 left-0 right-0">
+  <Text>Footer</Text>
+</View>
+```
+
+### Inline Styles for Custom Values
+
+Inline styles are used when precise values are needed:
+
+```tsx
+<View
+  style={{
+    backgroundColor: Colors.surfaceSolid,
+    borderRadius: 16,
+    padding: 12,
+    gap: 8,
+  }}
+>
+  <Text>Content</Text>
+</View>
+```
+
+### Combining Both Approaches
+
+```tsx
+<View
+  className="flex-row items-center"
+  style={{
+    marginBottom: 20,
+    backgroundColor: Colors.background,
+  }}
+>
+  <Text style={{ fontFamily: Fonts.displayMedium, fontSize: 17 }}>
+    Title
+  </Text>
+</View>
+```
+
+## Theme System
+
+### Colors
+
+Centralized color palette from `@/constants/theme`:
+
+```tsx
+export const Colors = {
+  // Backgrounds
+  background: '#F5F5F7',
+  dark: '#1C1C2E',
+  
+  // Surfaces
+  surfaceSolid: '#FFFFFF',
+  
+  // Accent
+  accent: '#FABC05',      // F1-inspired yellow
+  accentSoft: '#FFF8E1',  // Light yellow tint
+  
+  // Text
+  textPrimary: '#1C1C2E',
+  textSecondary: '#6E6E73',
+  
+  // Borders
+  border: '#E5E5EA',
+  
+  // Utility
+  white: '#FFFFFF',
+};
+```
+
+### Typography
+
+Font family constants:
+
+```tsx
+export const Fonts = {
+  // Display (headings)
+  displayMedium: 'System',
+  
+  // Body (paragraphs)
+  body: 'System',
+  bodySemiBold: 'System',
+};
+```
+
+### Usage Example
+
+```tsx
+import { Colors, Fonts } from '@/constants/theme';
+
+<Text
+  style={{
+    fontFamily: Fonts.displayMedium,
+    fontSize: 24,
+    color: Colors.textPrimary,
+  }}
+>
+  Season Journal
+</Text>
+```
+
+## Common UI Patterns
+
+### Glassmorphic Card
+
+```tsx
+<View
+  style={{
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 20,
+    padding: 16,
+    backdropFilter: 'blur(10px)', // Note: Limited support in RN
+  }}
+>
+  <Text>Card content</Text>
+</View>
+```
+
+### Shadow Elevation
+
+```tsx
+// iOS shadows
+style={{
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.12,
+  shadowRadius: 8,
+}}
+
+// Android elevation
+style={{
+  elevation: 4,
+}}
+
+// Combined for cross-platform
+style={{
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.12,
+  shadowRadius: 8,
+  elevation: 4,
+}}
+```
+
+### Pressable States
+
+```tsx
+<Pressable
+  onPress={handlePress}
+  style={({ pressed }) => ([
+    {
+      backgroundColor: pressed ? Colors.accentSoft : Colors.surfaceSolid,
+      borderRadius: 12,
+      padding: 12,
+    },
+  ])}
+>
+  <Text>Press me</Text>
+</Pressable>
+```
+
+### Conditional Styling
+
+```tsx
+const isActive = true;
+
+<View
+  style={{
+    backgroundColor: isActive ? Colors.accent : Colors.surfaceSolid,
+    borderWidth: 1,
+    borderColor: isActive ? Colors.accent : Colors.border,
+    opacity: isActive ? 1 : 0.5,
+  }}
+>
+  <Text style={{ color: isActive ? Colors.white : Colors.textPrimary }}>
+    {isActive ? 'Active' : 'Inactive'}
+  </Text>
+</View>
+```
+
+## Icon Libraries
+
+Season Journal uses multiple icon sources:
+
+### Lucide React Native
+
+Primary icon library for custom icons:
+
+```tsx
+import { Check, Pencil, Trash2, Undo2, X } from 'lucide-react-native';
+
+<Check color={Colors.white} size={16} strokeWidth={2.5} />
+<Pencil color={Colors.accent} size={28} strokeWidth={1.75} />
+```
+
+### Expo Vector Icons
+
+Fallback for platform compatibility:
+
+```tsx
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
+<MaterialIcons name="home" size={24} color={Colors.textPrimary} />
+```
+
+### SF Symbols (iOS)
+
+Native iOS icons via expo-symbols:
+
+```tsx
+import { SymbolView } from 'expo-symbols';
+
+<SymbolView
+  name="house.fill"
+  size={24}
+  tintColor={Colors.textPrimary}
+  weight="semibold"
+/>
+```
+
+<Tip>
+  Use `IconSymbol` component for automatic platform-appropriate icon selection.
+</Tip>
+
+## Accessibility
+
+Components include accessibility props:
+
+```tsx
+<Pressable
+  accessibilityRole="button"
+  accessibilityLabel="Toggle cell"
+  accessibilityHint="Tap to mark as complete"
+  accessibilityState={{ checked: cell.checked }}
+  onPress={handlePress}
+>
+  <Text>Cell content</Text>
+</Pressable>
+```
+
+## Performance Optimization
+
+### Memoization
+
+```tsx
+import { memo } from 'react';
+
+const MyComponent = memo(({ data }) => {
+  return <View>{/* render */}</View>;
+});
+```
+
+### useCallback for Handlers
+
+```tsx
+const handlePress = useCallback(
+  (index: number) => {
+    toggleCheck(index);
+  },
+  [toggleCheck]
+);
+```
+
+### useMemo for Expensive Calculations
+
+```tsx
+const rows = useMemo(() => {
+  const result = [];
+  for (let i = 0; i < cells.length; i += COLS) {
+    result.push(cells.slice(i, i + COLS));
+  }
+  return result;
+}, [cells]);
+```

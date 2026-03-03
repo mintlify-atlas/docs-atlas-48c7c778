@@ -1,0 +1,143 @@
+---
+title: Favorites Hooks
+description: React Query hooks for fetching favorite driver and team data
+---
+
+Hooks for fetching detailed information about a user's favorite driver or team using React Query.
+
+## useFavoriteDriver
+
+Fetches driver details from the Jolpica API.
+
+### Usage
+
+```typescript
+import { useFavoriteDriver } from "@/hooks/queries/useFavorites";
+
+function DriverProfile() {
+  const driverId = "max_verstappen";
+  const { data: driver, isLoading, error } = useFavoriteDriver(driverId);
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  return (
+    <View>
+      <Text>{driver.givenName} {driver.familyName}</Text>
+      <Text>Number: {driver.permanentNumber}</Text>
+    </View>
+  );
+}
+```
+
+### Parameters
+
+<ParamField path="driverId" type="string | null" required>
+  The driver ID to fetch. If `null`, the query will be disabled and return `null`.
+</ParamField>
+
+### Return Value
+
+Returns a React Query `UseQueryResult` object with:
+
+<ResponseField name="data" type="Driver | null">
+  Driver data from the Jolpica API, or `null` if `driverId` is `null`
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  Loading state
+</ResponseField>
+
+<ResponseField name="error" type="Error | null">
+  Error object if the query failed
+</ResponseField>
+
+<ResponseField name="refetch" type="() => void">
+  Function to manually refetch the data
+</ResponseField>
+
+### Implementation Details
+
+- Query key: `["favoriteDriver", driverId]`
+- Enabled only when `driverId` is not `null`
+- Uses `jolpicaApi.getDriver()` to fetch data
+- Returns `null` immediately if `driverId` is `null`
+
+## useFavoriteTeam
+
+Fetches constructor (team) details from the Jolpica API.
+
+### Usage
+
+```typescript
+import { useFavoriteTeam } from "@/hooks/queries/useFavorites";
+
+function TeamProfile() {
+  const constructorId = "red_bull";
+  const { data: team, isLoading, error } = useFavoriteTeam(constructorId);
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  return (
+    <View>
+      <Text>{team.name}</Text>
+      <Text>Nationality: {team.nationality}</Text>
+    </View>
+  );
+}
+```
+
+### Parameters
+
+<ParamField path="constructorId" type="string | null" required>
+  The constructor ID to fetch. If `null`, the query will be disabled and return `null`.
+</ParamField>
+
+### Return Value
+
+Returns a React Query `UseQueryResult` object with:
+
+<ResponseField name="data" type="Constructor | null">
+  Constructor data from the Jolpica API, or `null` if `constructorId` is `null`
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  Loading state
+</ResponseField>
+
+<ResponseField name="error" type="Error | null">
+  Error object if the query failed
+</ResponseField>
+
+<ResponseField name="refetch" type="() => void">
+  Function to manually refetch the data
+</ResponseField>
+
+### Implementation Details
+
+- Query key: `["favoriteTeam", constructorId]`
+- Enabled only when `constructorId` is not `null`
+- Uses `jolpicaApi.getConstructor()` to fetch data
+- Returns `null` immediately if `constructorId` is `null`
+
+## React Query Integration
+
+Both hooks use `@tanstack/react-query` for data fetching and caching:
+
+- Automatic caching based on query keys
+- Background refetching when data becomes stale
+- Deduplication of requests for the same query key
+- Automatic error retry logic
+
+## Conditional Fetching
+
+Both hooks use the `enabled` option to conditionally fetch data:
+
+```typescript
+// Only fetches when driverId is not null
+const { data } = useFavoriteDriver(driverId);
+
+// If driverId is null, isLoading is false and data is null
+const { data } = useFavoriteDriver(null);  // No API call made
+```

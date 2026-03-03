@@ -1,0 +1,419 @@
+---
+title: State Management
+description: Data fetching with React Query and local state patterns in Season Journal
+---
+
+Season Journal uses a modern, efficient state management approach that separates server state from local state:
+
+- **React Query** (`@tanstack/react-query`) - Server state and data fetching
+- **React hooks** (`useState`, custom hooks) - Local UI state
+
+This separation provides optimal caching, automatic refetching, and predictable state updates.
+
+## Server State with React Query
+
+React Query handles all server data fetching, caching, and synchronization with the Jolpica F1 API.
+
+### Query Client Configuration
+
+The global query client is configured in `lib/api/query-client.ts`:
+
+```typescript lib/api/query-client.ts
+import { QueryClient } from "@tanstack/react-query";
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,      // 5 minutes
+      gcTime: 1000 * 60 * 60 * 24,   // 24 hours (garbage collection)
+      retry: 2,                       // Retry failed requests twice
+      refetchOnWindowFocus: false,    // Don't refetch on focus
+    },
+  },
+});
+```
+
+**Configuration explained:**
+
+- **staleTime (5 min)** - Data is considered fresh for 5 minutes before refetching
+- **gcTime (24 hours)** - Cached data is kept for 24 hours before garbage collection
+- **retry: 2** - Failed requests are retried twice before throwing an error
+- **refetchOnWindowFocus: false** - Prevents unnecessary refetches when the app regains focus
+
+### Provider Setup
+
+The QueryClientProvider wraps the entire app in `app/_layout.tsx`:
+
+```tsx app/_layout.tsx
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/api/query-client";
+
+export default function RootLayout() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Stack>
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </QueryClientProvider>
+  );
+}
+```
+
+## Data Fetching Patterns
+
+### Query Hooks
+
+All data fetching is encapsulated in custom hooks that use `useQuery`:
+
+#### Championship Standings
+
+```typescript hooks/queries/useStandings.ts
+import { useQuery } from "@tanstack/react-query";
+import { jolpicaApi } from "@/services/jolpica/api";
+
+export function useDriverStandings(year: string = "current") {
+  return useQuery({
+    queryKey: ["driverStandings", year],
+    queryFn: () => jolpicaApi.getDriverStandings(year),
+  });
+}
+
+export function useConstructorStandings(year: string = "current") {
+  return useQuery({
+    queryKey: ["constructorStandings", year],
+    queryFn: () => jolpicaApi.getConstructorStandings(year),
+  });
+}
+```
+
+**Usage in components:**
+
+```tsx components/screens/drivers-screen.tsx
+import { useDriverStandings } from "@/hooks/queries/useStandings";
+
+export default function DriversScreen() {
+  const { data: standings, isLoading, error } = useDriverStandings();
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  return (
+    <FlatList
+      data={standings}
+      renderItem={({ item }) => <DriverCard driver={item} />}
+    />
+  );
+}
+```
+
+#### Favorites Data
+
+```typescript hooks/queries/useFavorites.ts
+import { useQuery } from "@tanstack/react-query";
+import { jolpicaApi } from "@/services/jolpica/api";
+
+export function useFavoriteDriver(driverId: string | null) {
+  return useQuery({
+    queryKey: ["favoriteDriver", driverId],
+    queryFn: () => (driverId ? jolpicaApi.getDriver(driverId) : null),
+    enabled: !!driverId,  // Only fetch if driverId exists
+  });
+}
+
+export function useFavoriteTeam(constructorId: string | null) {
+  return useQuery({
+    queryKey: ["favoriteTeam", constructorId],
+    queryFn: () => (constructorId ? jolpicaApi.getConstructor(constructorId) : null),
+    enabled: !!constructorId,
+  });
+}
+```
+
+<Note>
+The `enabled` option prevents queries from running when the ID is null, avoiding unnecessary API calls.
+</Note>
+
+### API Service Layer
+
+The `jolpicaApi` service in `services/jolpica/api.ts` provides typed methods for the F1 API:
+
+```typescript services/jolpica/api.ts
+export const jolpicaApi = {
+  async getDriverStandings(year: string = "current"): Promise<DriverStanding[]> {
+    const response = await fetch(
+      `${API_CONFIG.JOLPICA_BASE_URL}/${year}/driverStandings.json`
+    );
+    if (!response.ok) {
+      throw new Error("Failed to fetch driver standings");
+    }
+    const data: StandingsResponse<DriverStanding> = await response.json();
+    return data.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || [];
+  },
+
+  async getConstructorStandings(year: string = "current"): Promise<ConstructorStanding[]> {
+    const response = await fetch(
+      `${API_CONFIG.JOLPICA_BASE_URL}/${year}/constructorStandings.json`
+    );
+    if (!response.ok) {
+      throw new Error("Failed to fetch constructor standings");
+    }
+    const data: StandingsResponse<ConstructorStanding> = await response.json();
+    return data.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || [];
+  },
+
+  async getDriver(driverId: string): Promise<Driver | null> {
+    const response = await fetch(
+      `${API_CONFIG.JOLPICA_BASE_URL}/drivers/${driverId}.json`
+    );
+    if (!response.ok) {
+      throw new Error("Failed to fetch driver");
+    }
+    const data = await response.json();
+    return data.MRData.DriverTable?.Drivers?.[0] || null;
+  },
+};
+```
+
+**Type definitions:**
+
+```typescript
+export interface DriverStanding {
+  position: string;
+  positionText: string;
+  points: string;
+  wins: string;
+  Driver: Driver;
+  Constructors: Constructor[];
+}
+
+export interface Driver {
+  driverId: string;
+  permanentNumber: string;
+  code: string;
+  givenName: string;
+  familyName: string;
+  dateOfBirth: string;
+  nationality: string;
+}
+```
+
+## Local State Patterns
+
+### Custom Hooks for Component State
+
+Complex local state is encapsulated in custom hooks for reusability and testability.
+
+#### Bingo Grid State
+
+The `useBingoState` hook manages the 4x4 bingo grid:
+
+```typescript hooks/use-bingo-state.ts
+import { useCallback, useMemo, useState } from "react";
+import type { CanvasState } from "@/components/bingo/canvas/canvas-types";
+
+export type BingoCell = {
+  checked: boolean;
+  imageUri: string | null;
+  canvasState: CanvasState | null;
+};
+
+const GRID_SIZE = 16;
+
+const createInitialCells = (): BingoCell[] =>
+  Array.from({ length: GRID_SIZE }, () => ({
+    checked: false,
+    imageUri: null,
+    canvasState: null,
+  }));
+
+export function useBingoState() {
+  const [cells, setCells] = useState<BingoCell[]>(createInitialCells);
+
+  // Memoized computed value
+  const checkedCount = useMemo(
+    () => cells.filter((c) => c.checked).length,
+    [cells]
+  );
+
+  // Toggle cell checked state
+  const toggleCheck = useCallback((index: number) => {
+    setCells((prev) =>
+      prev.map((cell, i) =>
+        i === index ? { ...cell, checked: !cell.checked } : cell
+      )
+    );
+  }, []);
+
+  // Update cell with canvas data
+  const editCell = useCallback(
+    (index: number, uri: string, canvasState: CanvasState) => {
+      setCells((prev) =>
+        prev.map((cell, i) =>
+          i === index
+            ? { ...cell, imageUri: uri, canvasState }
+            : cell
+        )
+      );
+    },
+    []
+  );
+
+  return {
+    cells,
+    checkedCount,
+    total: GRID_SIZE,
+    toggleCheck,
+    editCell,
+  };
+}
+```
+
+**Usage:**
+
+```tsx
+import { useBingoState } from "@/hooks/use-bingo-state";
+
+export default function BingoScreen() {
+  const { cells, checkedCount, total, toggleCheck, editCell } = useBingoState();
+
+  return (
+    <>
+      <BingoProgressBar checked={checkedCount} total={total} />
+      <BingoGrid
+        cells={cells}
+        onToggle={toggleCheck}
+        onEdit={editCell}
+      />
+    </>
+  );
+}
+```
+
+### Simple Component State
+
+For simple UI state, use `useState` directly:
+
+```tsx
+import { useState } from "react";
+
+export default function Example() {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  return (
+    <>
+      <Button onPress={() => setIsModalVisible(true)} />
+      <Modal visible={isModalVisible} onClose={() => setIsModalVisible(false)} />
+    </>
+  );
+}
+```
+
+## Query Keys Strategy
+
+Query keys enable precise cache management and automatic refetching:
+
+```typescript
+// Static key
+["driverStandings", "current"]  // Current season standings
+
+// Dynamic key with parameter
+["driverStandings", "2023"]     // 2023 season standings
+
+// Dependent key
+["favoriteDriver", driverId]    // Specific driver data
+```
+
+**Benefits:**
+- Automatic cache invalidation when keys change
+- Easy to invalidate related queries
+- Type-safe with TypeScript
+
+## Error Handling
+
+React Query provides built-in error states:
+
+```tsx
+import { useDriverStandings } from "@/hooks/queries/useStandings";
+
+export default function StandingsScreen() {
+  const { data, isLoading, error, refetch } = useDriverStandings();
+
+  if (isLoading) {
+    return <ActivityIndicator />;
+  }
+
+  if (error) {
+    return (
+      <View>
+        <Text>Failed to load standings</Text>
+        <Button title="Retry" onPress={() => refetch()} />
+      </View>
+    );
+  }
+
+  return <StandingsList data={data} />;
+}
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Use React Query for server state">
+    Never use `useState` for data fetched from APIs. Always use `useQuery`.
+  </Step>
+  
+  <Step title="Create custom hooks for queries">
+    Encapsulate `useQuery` calls in custom hooks like `useDriverStandings` for reusability.
+  </Step>
+  
+  <Step title="Use meaningful query keys">
+    Query keys should be descriptive and include all relevant parameters.
+  </Step>
+  
+  <Step title="Optimize with useMemo and useCallback">
+    Memoize computed values and callbacks to prevent unnecessary re-renders.
+  </Step>
+  
+  <Step title="Handle loading and error states">
+    Always provide feedback for loading and error states in the UI.
+  </Step>
+</Steps>
+
+<Tip>
+React Query automatically deduplicates requests. Multiple components using the same query will share a single network request.
+</Tip>
+
+## State Management Summary
+
+<CardGroup cols={2}>
+  <Card title="Server State" icon="cloud">
+    **React Query**
+    
+    - API data fetching
+    - Automatic caching
+    - Background refetching
+    - Error handling
+  </Card>
+  
+  <Card title="Local State" icon="laptop">
+    **React Hooks**
+    
+    - UI state (modals, forms)
+    - Component state
+    - Derived state (useMemo)
+    - Event handlers (useCallback)
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Navigation" icon="route" href="/development/navigation">
+    Learn about Expo Router and navigation patterns
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api/types">
+    Explore available hooks and services
+  </Card>
+</CardGroup>

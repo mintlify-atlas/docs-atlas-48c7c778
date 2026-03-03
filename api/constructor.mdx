@@ -1,0 +1,98 @@
+---
+title: 'Constructor'
+description: 'Constructor interface for Formula 1 team information'
+---
+
+## Overview
+
+The `Constructor` interface represents a Formula 1 constructor (team) with identification and metadata from the Jolpica F1 API.
+
+## Interface Definition
+
+```typescript
+export interface Constructor {
+  constructorId: string;
+  url: string;
+  name: string;
+  nationality: string;
+}
+```
+
+## Properties
+
+<ResponseField name="constructorId" type="string" required>
+  Unique identifier for the constructor (e.g., "mercedes", "red_bull", "ferrari")
+</ResponseField>
+
+<ResponseField name="url" type="string" required>
+  Wikipedia URL for the constructor with additional historical information
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Full official name of the constructor team (e.g., "Mercedes", "Red Bull", "Ferrari")
+</ResponseField>
+
+<ResponseField name="nationality" type="string" required>
+  Constructor's nationality (e.g., "German", "Austrian", "Italian")
+</ResponseField>
+
+## Usage
+
+The `Constructor` interface is used throughout the application in several contexts:
+
+### Constructor Standings
+
+Each `ConstructorStanding` contains a `Constructor` object:
+
+```typescript
+interface ConstructorStanding {
+  position: string;
+  positionText: string;
+  points: string;
+  wins: string;
+  Constructor: Constructor;
+}
+```
+
+### Driver Standings
+
+Each `DriverStanding` includes an array of constructors the driver has raced for during the season:
+
+```typescript
+interface DriverStanding {
+  position: string;
+  positionText: string;
+  points: string;
+  wins: string;
+  Driver: Driver;
+  Constructors: Constructor[]; // Array of constructors
+}
+```
+
+### Favorites System
+
+Constructors can be marked as favorites and stored in local preferences.
+
+### API Fetching
+
+The Jolpica API service provides a method to fetch individual constructor data:
+
+```typescript
+const constructor = await jolpicaApi.getConstructor("mercedes");
+```
+
+## Example Data
+
+```json
+{
+  "constructorId": "mercedes",
+  "url": "http://en.wikipedia.org/wiki/Mercedes-Benz_in_Formula_One",
+  "name": "Mercedes",
+  "nationality": "German"
+}
+```
+
+## Related Types
+
+- [Driver](/api/driver) - Driver interface
+- [Data Models](/api/types) - Overview of all data models

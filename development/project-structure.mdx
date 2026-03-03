@@ -1,0 +1,207 @@
+---
+title: Project Structure
+description: Overview of the Season Journal codebase architecture and directory organization
+---
+
+Season Journal follows a well-organized, modular architecture built on Expo and React Native. The project uses file-based routing with Expo Router and follows React Native best practices for scalability and maintainability.
+
+## Directory Layout
+
+```text
+season-journal/
+├── app/             # Expo Router file-based routing
+│   └── (tabs)/      # Bottom tab navigation screens
+├── components/      # Reusable UI components and features
+│   ├── bingo/       # Bingo grid and canvas editor
+│   ├── screens/     # Screen-level components
+│   └── ui/          # Atomic UI components
+├── constants/       # Global constants (theme, config)
+├── hooks/           # Custom React hooks
+│   └── queries/     # React Query hooks
+├── services/        # API clients and services
+│   └── jolpica/     # F1 data API integration
+├── lib/             # Utilities and configuration
+│   └── api/         # API configuration
+├── assets/          # Static assets (images, fonts)
+└── scripts/         # Utility scripts
+```
+
+## Core Directories
+
+### `/app` - File-Based Routing
+
+The `app/` directory uses [Expo Router](https://docs.expo.dev/router/introduction/) for navigation. Each file represents a route in the application.
+
+**Key files:**
+- `_layout.tsx` - Root layout with QueryClient provider
+- `(tabs)/_layout.tsx` - Bottom tab navigation configuration
+- `(tabs)/index.tsx` - Bingo screen (home)
+- `(tabs)/tracking.tsx` - Championship tracking
+- `(tabs)/favourites.tsx` - Favorites management
+
+<Tip>
+The `(tabs)` folder uses Expo Router's group syntax to create a bottom tab navigator without affecting the URL structure.
+</Tip>
+
+### `/components` - UI Components
+
+Reusable components organized by feature and complexity level.
+
+**Structure:**
+```text
+components/
+├── bingo/               # Bingo feature components
+│   ├── bingo-grid.tsx
+│   ├── bingo-cell.tsx
+│   ├── bingo-progress-bar.tsx
+│   └── canvas/          # Canvas editor modal
+├── screens/             # Full screen components
+│   ├── drivers-screen.tsx
+│   ├── constructors-screen.tsx
+│   ├── favourite-driver-screen.tsx
+│   └── favourite-team-screen.tsx
+├── ui/                  # Atomic UI components
+│   └── icon-symbol.tsx
+└── journal-tab-bar.tsx  # Custom tab bar
+```
+
+**Component organization:**
+- **Feature components** (`bingo/`, `screens/`) - Domain-specific, composed components
+- **UI components** (`ui/`) - Generic, reusable atomic components
+- **Layout components** - Tab bars, navigation elements
+
+### `/constants` - Global Configuration
+
+Centralized constants for consistent theming and configuration.
+
+**Files:**
+- `theme.ts` - Colors and typography system
+
+```typescript constants/theme.ts
+export const Colors = {
+  background: "#EEEDF2",
+  surface: "rgba(255,255,255,0.85)",
+  surfaceSolid: "#FFFFFF",
+  dark: "#1C1C2E",
+  textPrimary: "#1C1C2E",
+  textSecondary: "#8E8E93",
+  accent: "#FABC05",
+  // ...
+} as const;
+```
+
+### `/hooks` - Custom Hooks
+
+Reusable React hooks for state management and side effects.
+
+**Structure:**
+```text
+hooks/
+├── use-bingo-state.ts      # Bingo grid state management
+├── use-canvas-editor.ts    # Canvas editor logic
+├── use-color-scheme.ts     # Color scheme detection
+└── queries/                # React Query hooks
+    ├── useStandings.ts
+    └── useFavorites.ts
+```
+
+**Key hooks:**
+- `useBingoState` - Manages 4x4 bingo grid state
+- `useDriverStandings` - Fetches driver championship data
+- `useConstructorStandings` - Fetches constructor standings
+- `useFavoriteDriver` - Queries individual driver data
+
+### `/services` - API Integration
+
+API clients and service layers for external data sources.
+
+**Structure:**
+```text
+services/
+└── jolpica/
+    └── api.ts          # Jolpica F1 API client
+```
+
+The `jolpicaApi` service provides methods for fetching F1 data:
+- `getDriverStandings(year)` - Driver championship standings
+- `getConstructorStandings(year)` - Constructor standings
+- `getDriver(driverId)` - Individual driver details
+- `getConstructor(constructorId)` - Team information
+
+### `/lib` - Utilities
+
+Shared utilities, helpers, and configuration.
+
+**Files:**
+- `api/query-client.ts` - React Query client configuration
+- `api/config.ts` - API endpoint configuration
+
+```typescript lib/api/query-client.ts
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,      // 5 minutes
+      gcTime: 1000 * 60 * 60 * 24,   // 24 hours
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+```
+
+## Design Principles
+
+<CardGroup cols={2}>
+  <Card title="Modularity" icon="cubes">
+    Components are small, focused, and composable. Each component has a single responsibility.
+  </Card>
+  
+  <Card title="Type Safety" icon="shield-check">
+    Full TypeScript coverage ensures type safety across the entire codebase.
+  </Card>
+  
+  <Card title="Separation of Concerns" icon="layer-group">
+    Clear boundaries between UI, business logic, and data fetching.
+  </Card>
+  
+  <Card title="Reusability" icon="recycle">
+    Shared components, hooks, and utilities reduce duplication.
+  </Card>
+</CardGroup>
+
+## File Naming Conventions
+
+- **Components:** `kebab-case.tsx` (e.g., `bingo-cell.tsx`)
+- **Hooks:** `use-kebab-case.ts` (e.g., `use-bingo-state.ts`)
+- **Types/Interfaces:** `PascalCase` within files
+- **Services:** `kebab-case.ts` (e.g., `query-client.ts`)
+
+## Import Aliases
+
+The project uses path aliases for clean imports:
+
+```typescript
+import { Colors } from "@/constants/theme";
+import { useBingoState } from "@/hooks/use-bingo-state";
+import { jolpicaApi } from "@/services/jolpica/api";
+```
+
+<Note>
+The `@/` alias maps to the project root, making imports consistent regardless of file depth.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Theming" icon="palette" href="/development/theming">
+    Learn about the color system and styling approach
+  </Card>
+  
+  <Card title="State Management" icon="database" href="/development/state-management">
+    Understand data fetching and state patterns
+  </Card>
+  
+  <Card title="Navigation" icon="route" href="/development/navigation">
+    Explore the routing structure and navigation
+  </Card>
+</CardGroup>

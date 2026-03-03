@@ -1,0 +1,231 @@
+---
+title: 'Data Models Overview'
+description: 'Core TypeScript interfaces and types used throughout Season Journal'
+---
+
+## Overview
+
+Season Journal uses strongly-typed data models to represent Formula 1 data from the Jolpica F1 API and internal application state. This section documents the core TypeScript interfaces and types used throughout the application.
+
+## Standings Types
+
+Types used for fetching and displaying driver and constructor standings.
+
+### DriverStanding
+
+<ResponseField name="position" type="string" required>
+  Current championship position
+</ResponseField>
+
+<ResponseField name="positionText" type="string" required>
+  Text representation of position
+</ResponseField>
+
+<ResponseField name="points" type="string" required>
+  Total championship points
+</ResponseField>
+
+<ResponseField name="wins" type="string" required>
+  Number of race wins
+</ResponseField>
+
+<ResponseField name="Driver" type="Driver" required>
+  Driver information object
+</ResponseField>
+
+<ResponseField name="Constructors" type="Constructor[]" required>
+  Array of constructor teams the driver has raced for
+</ResponseField>
+
+### ConstructorStanding
+
+<ResponseField name="position" type="string" required>
+  Current championship position
+</ResponseField>
+
+<ResponseField name="positionText" type="string" required>
+  Text representation of position
+</ResponseField>
+
+<ResponseField name="points" type="string" required>
+  Total championship points
+</ResponseField>
+
+<ResponseField name="wins" type="string" required>
+  Number of race wins
+</ResponseField>
+
+<ResponseField name="Constructor" type="Constructor" required>
+  Constructor team information object
+</ResponseField>
+
+### StandingsResponse\<T\>
+
+Generic response wrapper from the Jolpica F1 API.
+
+<ResponseField name="MRData" type="object" required>
+  Root data object
+  
+  <ResponseField name="StandingsTable" type="object" required>
+    Standings table container
+    
+    <ResponseField name="StandingsLists" type="array" required>
+      Array of standings lists
+      
+      <ResponseField name="season" type="string" required>
+        Season year
+      </ResponseField>
+      
+      <ResponseField name="round" type="string" required>
+        Round number
+      </ResponseField>
+      
+      <ResponseField name="DriverStandings" type="T[]">
+        Driver standings array (when T is DriverStanding)
+      </ResponseField>
+      
+      <ResponseField name="ConstructorStandings" type="T[]">
+        Constructor standings array (when T is ConstructorStanding)
+      </ResponseField>
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+## Canvas Types
+
+Types used for the Bingo canvas drawing feature.
+
+### DrawPath
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the drawing path
+</ResponseField>
+
+<ResponseField name="path" type="string" required>
+  SVG path data string
+</ResponseField>
+
+<ResponseField name="color" type="string" required>
+  Hex color code for the path stroke
+</ResponseField>
+
+<ResponseField name="strokeWidth" type="number" required>
+  Width of the stroke in pixels
+</ResponseField>
+
+### CanvasText
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the text element
+</ResponseField>
+
+<ResponseField name="text" type="string" required>
+  Text content to display
+</ResponseField>
+
+<ResponseField name="color" type="string" required>
+  Hex color code for the text
+</ResponseField>
+
+<ResponseField name="x" type="number" required>
+  X coordinate position
+</ResponseField>
+
+<ResponseField name="y" type="number" required>
+  Y coordinate position
+</ResponseField>
+
+<ResponseField name="scale" type="number" required>
+  Scale factor for text size
+</ResponseField>
+
+### CanvasImage
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the image element
+</ResponseField>
+
+<ResponseField name="uri" type="string" required>
+  Image URI or base64 data
+</ResponseField>
+
+<ResponseField name="x" type="number" required>
+  X coordinate position
+</ResponseField>
+
+<ResponseField name="y" type="number" required>
+  Y coordinate position
+</ResponseField>
+
+<ResponseField name="width" type="number" required>
+  Image width in pixels
+</ResponseField>
+
+<ResponseField name="height" type="number" required>
+  Image height in pixels
+</ResponseField>
+
+### CanvasAction
+
+<ResponseField name="type" type="'draw' | 'text' | 'image'" required>
+  Type of canvas action
+</ResponseField>
+
+<ResponseField name="id" type="string" required>
+  Identifier of the element this action relates to
+</ResponseField>
+
+### ToolMode
+
+Union type for canvas tool modes:
+```typescript
+type ToolMode = "draw" | "text" | "image" | "hand" | "pipette" | null;
+```
+
+### CanvasState
+
+Complete state object for the Bingo canvas.
+
+<ResponseField name="paths" type="DrawPath[]" required>
+  Array of all drawing paths
+</ResponseField>
+
+<ResponseField name="texts" type="CanvasText[]" required>
+  Array of all text elements
+</ResponseField>
+
+<ResponseField name="images" type="CanvasImage[]" required>
+  Array of all image elements
+</ResponseField>
+
+<ResponseField name="zOrder" type="string[]" required>
+  Array of element IDs defining the rendering order (z-index)
+</ResponseField>
+
+<ResponseField name="selectedColor" type="string" required>
+  Currently selected drawing color
+</ResponseField>
+
+<ResponseField name="selectedStrokeWidth" type="number" required>
+  Currently selected stroke width
+</ResponseField>
+
+<ResponseField name="recentColors" type="string[]" required>
+  Array of recently used colors
+</ResponseField>
+
+## Constants
+
+### CANVAS_COLORS
+
+Default color palette for the canvas:
+```typescript
+const CANVAS_COLORS = [
+  "#1C1C2E", // Dark blue-gray
+  "#E53935", // Red
+  "#1E88E5", // Blue
+  "#43A047", // Green
+  "#FABC05", // Yellow
+  "#FFFFFF", // White
+] as const;
+```
